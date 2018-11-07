@@ -53,7 +53,7 @@ struct Localization: Codable {
 	}
 	
 	private static func loadEntries(from url: URL) throws -> OrderedSet<Entry> {
-		let regex = try NSRegularExpression(pattern: "\"(?<key>.*)\" = \"(?<value>.*)\"", options: [])
+		let regex = try NSRegularExpression(pattern: "\"(?<key>.*)\"\\s*=\\s*\"(?<value>.*)\"", options: [])
 		var entries: [Entry] = []
 		let baseString = try String(contentsOf: url)
 		let scanner = Scanner(string: baseString)
