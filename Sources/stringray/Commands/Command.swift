@@ -27,7 +27,7 @@ struct SaveOptions : OptionSet {
 
 extension Command {
 	
-	func cacheURL(for url: Foundation.URL) -> Foundation.URL? {
+	private func cacheURL(for url: Foundation.URL) -> Foundation.URL? {
 		let bundleIdentifier = Bundle.main.bundleIdentifier ?? "net.g-Off.stringray"
 		let filePath = "\(bundleIdentifier)/\(url.deletingPathExtension().lastPathComponent).localization"
 		guard let cacheURL = try? FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: URL(fileURLWithPath: filePath), create: true)
@@ -39,35 +39,34 @@ extension Command {
 		return URL(fileURLWithPath: filePath, relativeTo: cacheURL)
 	}
 	
-	func localizationCache(for url: Foundation.URL) -> LocalizationCache? {
-		guard let localizationURL = cacheURL(for: url) else { return nil }
+	private func tableCache(for url: Foundation.URL) -> TableCache? {
+		guard let tableURL = cacheURL(for: url) else { return nil }
 		do {
 			let decoder = PropertyListDecoder()
-			let localizationData = try Data(contentsOf: localizationURL)
-			return try decoder.decode(LocalizationCache.self, from: localizationData)
+			let tableData = try Data(contentsOf: tableURL)
+			return try decoder.decode(TableCache.self, from: tableData)
 		} catch {
 			return nil
 		}
 	}
 	
-	func localization(for url: Foundation.URL) -> Localization? {
-		guard let localizationCache = localizationCache(for: url) else { return nil }
-		if LocalizationCache.GenerationIdentifier(url: url) == localizationCache.generationIdentifier {
-			return localizationCache.localization
+	func loadTable(for url: Foundation.URL) throws -> StringsTable {
+		if let tableCache = tableCache(for: url), TableCache.GenerationIdentifier(url: url) == tableCache.generationIdentifier {
+			return tableCache.table
 		}
-		return nil
+		return try StringsTable(url: url)
 	}
 	
-	func save(localization: Localization, options: SaveOptions) throws {
-		var localization = localization
+	func save(table: StringsTable, options: SaveOptions) throws {
+		var table = table
 		if options.contains(.sortedKeys) {
-			localization.sort()
+			table.sort()
 		}
 		if options.contains(.writeFile) {
-			for (languageId, languageEntries) in localization.entries {
-				let lprojURL = localization.resourceDirectory.appendingPathComponent(languageId, isDirectory: true)
+			for (languageId, languageEntries) in table.entries {
+				let lprojURL = table.resourceDirectory.appendingPathComponent(languageId, isDirectory: true)
 				try FileManager.default.createDirectory(at: lprojURL, withIntermediateDirectories: true, attributes: nil)
-				let fileURL = lprojURL.appendingPathComponent(localization.baseURL.lastPathComponent)
+				let fileURL = lprojURL.appendingPathComponent(table.baseURL.lastPathComponent)
 				guard let outputStream = OutputStream(url: fileURL, append: false) else { continue }
 				outputStream.open()
 				var firstEntry = true
@@ -77,19 +76,19 @@ extension Command {
 					}
 					firstEntry = false
 					if let comment = entry.comment {
-						outputStream.write(string: "/* \(comment) */\n")
+						outputStream.write(string: "\(comment)\n")
 					}
-					outputStream.write(string: "\"\(entry.key)\" = \"\(entry.value)\";\n")
+					outputStream.write(string: "\(entry.keyedValue)\n")
 				}
 				outputStream.close()
 			}
 		}
 		
-		if options.contains(.writeCache), let generationIdentifier = LocalizationCache.GenerationIdentifier(url: localization.baseURL), let cacheURL = cacheURL(for: localization.baseURL) {
-			let localizationCache = LocalizationCache(generationIdentifier: generationIdentifier, localization: localization)
+		if options.contains(.writeCache), let generationIdentifier = TableCache.GenerationIdentifier(url: table.baseURL), let cacheURL = cacheURL(for: table.baseURL) {
+			let tableCache = TableCache(generationIdentifier: generationIdentifier, table: table)
 			let encoder = PropertyListEncoder()
 			encoder.outputFormat = .binary
-			let data = try encoder.encode(localizationCache)
+			let data = try encoder.encode(tableCache)
 			try data.write(to: cacheURL)
 		}
 	}

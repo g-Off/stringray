@@ -1,25 +1,31 @@
 //
-//  SortCommand.swift
+//  LintCommand.swift
 //  stringray
 //
-//  Created by Geoffrey Foster on 2018-11-04.
+//  Created by Geoffrey Foster on 2018-11-07.
 //
 
 import Foundation
 import Utility
 
-struct SortCommand: Command {
+struct LintCommand: Command {
 	private struct Arguments {
 		var inputFile: Foundation.URL!
 	}
-	let command: String = "sort"
-	let overview: String = "Sorts the keys in the given strings table."
+	
+	let command: String = "lint"
+	let overview: String = ""
+	private var rules: [LintRule] = [
+		MissingLocalizationLintRule(),
+		OrphanedLocalizationLintRule()
+	]
 	
 	private let binder: ArgumentBinder<Arguments>
 	
 	init(parser: ArgumentParser) {
 		binder = ArgumentBinder<Arguments>()
 		let subparser = parser.add(subparser: command, overview: overview)
+		
 		let inputFile = subparser.add(positional: "inputFile", kind: PathArgument.self, optional: false, usage: "", completion: .filename)
 		
 		binder.bind(positional: inputFile) { (arguments, inputFile) in
@@ -30,21 +36,16 @@ struct SortCommand: Command {
 	func run(with arguments: ArgumentParser.Result) throws {
 		var commandArgs = Arguments()
 		try binder.fill(parseResult: arguments, into: &commandArgs)
-		try sort(url: commandArgs.inputFile)
+		try lint(url: commandArgs.inputFile)
 	}
 	
-	private func sort(url: Foundation.URL) throws {
-		try save(table: try loadTable(for: url), options: [.writeFile, .writeCache, .sortedKeys])
+	private func lint(url: Foundation.URL) throws {
+		let tableForLinting = try loadTable(for: url)
+		for rule in rules {
+			let violations = rule.scan(table: tableForLinting)
+			for violation in violations {
+				print(violation.reason)
+			}
+		}
 	}
 }
-//class SortCommand: MutatingCommand, Command {
-//	let name: String = "sort"
-//	
-//	let param = Parameter()
-//	
-
-//	
-//	var shortDescription: String {
-//		return "Sorts the strings by key in alphabetic ascending order."
-//	}
-//}

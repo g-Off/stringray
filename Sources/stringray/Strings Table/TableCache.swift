@@ -1,5 +1,5 @@
 //
-//  LocalizationCache.swift
+//  TableCache.swift
 //  stringray
 //
 //  Created by Geoffrey Foster on 2018-11-02.
@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct LocalizationCache: Codable {
+struct TableCache: Codable {
 	struct GenerationIdentifier: Codable, Equatable {
 		private let identifier: String
 		
@@ -31,10 +31,10 @@ struct LocalizationCache: Codable {
 		}
 	}
 	let generationIdentifier: GenerationIdentifier
-	let localization: Localization
+	let table: StringsTable
 	
-	init(generationIdentifier: GenerationIdentifier, localization: Localization) {
+	init(generationIdentifier: GenerationIdentifier, table: StringsTable) {
 		self.generationIdentifier = generationIdentifier
-		self.localization = localization
+		self.table = table
 	}
 }
