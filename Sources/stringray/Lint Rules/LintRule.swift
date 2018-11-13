@@ -8,15 +8,27 @@
 import Foundation
 
 protocol LintRule {
-	func scan(table: StringsTable) -> [LintRuleViolation]
+	func scan(table: StringsTable, url: URL) -> [LintRuleViolation]
+}
+
+enum Severity: String {
+	case warning
+	case error
 }
 
 struct LintRuleViolation {
-	let line: Int?
+	struct Location {
+		let file: URL
+		let line: Int?
+	}
+	
+	let location: Location
+	let severity: Severity
 	let reason: String
 	
-	init(line: Int? = nil, reason: String) {
-		self.line = line
+	public init(location: Location, severity: Severity, reason: String) {
+		self.location = location
+		self.severity = severity
 		self.reason = reason
 	}
 }

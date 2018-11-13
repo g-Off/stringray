@@ -47,13 +47,13 @@ struct MoveCommand: Command {
 	}
 	
 	private func move(from: Foundation.URL, to: Foundation.URL, matching: [Match]) throws {
-		var fromTable = try loadTable(for: from)
-		var toTable = try loadTable(for: to)
+		var fromTable = try StringsTable(url: from)
+		var toTable = try StringsTable(url: to)
 		
 		let filteredTable = fromTable.withKeys(matching: matching)
 		toTable.addEntries(from: filteredTable)
 		fromTable.removeEntries(from: filteredTable)
-		try save(table: toTable, options: [.writeFile, .writeCache])
-		try save(table: fromTable, options: [.writeFile, .writeCache])
+		try write(to: to.resourceDirectory, table: toTable, options: [.writeFile])
+		try write(to: from.resourceDirectory, table: fromTable, options: [.writeFile])
 	}
 }

@@ -40,9 +40,9 @@ struct LintCommand: Command {
 	}
 	
 	private func lint(url: Foundation.URL) throws {
-		let tableForLinting = try loadTable(for: url)
+		let tableForLinting = try StringsTable(url: url)
 		for rule in rules {
-			let violations = rule.scan(table: tableForLinting)
+			let violations = rule.scan(table: tableForLinting, url: url.resourceDirectory)
 			for violation in violations {
 				print(violation.reason)
 			}

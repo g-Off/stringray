@@ -22,51 +22,18 @@ struct SaveOptions : OptionSet {
 	
 	public static let sortedKeys = SaveOptions(rawValue: 1 << 0)
 	public static let writeFile = SaveOptions(rawValue: 1 << 1)
-	public static let writeCache = SaveOptions(rawValue: 1 << 2)
 }
 
 extension Command {
 	
-	private func cacheURL(for url: Foundation.URL) -> Foundation.URL? {
-		let bundleIdentifier = Bundle.main.bundleIdentifier ?? "net.g-Off.stringray"
-		let filePath = "\(bundleIdentifier)/\(url.deletingPathExtension().lastPathComponent).localization"
-		guard let cacheURL = try? FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: URL(fileURLWithPath: filePath), create: true)
-			else {
-				return nil
-		}
-		let fileURL = URL(fileURLWithPath: filePath, relativeTo: cacheURL)
-		try! FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: nil)
-		return URL(fileURLWithPath: filePath, relativeTo: cacheURL)
-	}
-	
-	private func tableCache(for url: Foundation.URL) -> TableCache? {
-		guard let tableURL = cacheURL(for: url) else { return nil }
-		do {
-			let decoder = PropertyListDecoder()
-			let tableData = try Data(contentsOf: tableURL)
-			return try decoder.decode(TableCache.self, from: tableData)
-		} catch {
-			return nil
-		}
-	}
-	
-	func loadTable(for url: Foundation.URL) throws -> StringsTable {
-		if let tableCache = tableCache(for: url), TableCache.GenerationIdentifier(url: url) == tableCache.generationIdentifier {
-			return tableCache.table
-		}
-		return try StringsTable(url: url)
-	}
-	
-	func save(table: StringsTable, options: SaveOptions) throws {
+	func write(to url: Foundation.URL, table: StringsTable, options: SaveOptions) throws {
 		var table = table
 		if options.contains(.sortedKeys) {
 			table.sort()
 		}
 		if options.contains(.writeFile) {
 			for (languageId, languageEntries) in table.entries {
-				let lprojURL = table.resourceDirectory.appendingPathComponent(languageId, isDirectory: true)
-				try FileManager.default.createDirectory(at: lprojURL, withIntermediateDirectories: true, attributes: nil)
-				let fileURL = lprojURL.appendingPathComponent(table.baseURL.lastPathComponent)
+				let fileURL = try url.stringsURL(tableName: table.name, locale: languageId)
 				guard let outputStream = OutputStream(url: fileURL, append: false) else { continue }
 				outputStream.open()
 				var firstEntry = true
@@ -82,14 +49,14 @@ extension Command {
 				}
 				outputStream.close()
 			}
-		}
-		
-		if options.contains(.writeCache), let generationIdentifier = TableCache.GenerationIdentifier(url: table.baseURL), let cacheURL = cacheURL(for: table.baseURL) {
-			let tableCache = TableCache(generationIdentifier: generationIdentifier, table: table)
-			let encoder = PropertyListEncoder()
-			encoder.outputFormat = .binary
-			let data = try encoder.encode(tableCache)
-			try data.write(to: cacheURL)
+			
+			for (languageId, languageEntries) in table.dictEntries {
+				let fileURL = try url.stringsDictURL(tableName: table.name, locale: languageId)
+				let encoder = PropertyListEncoder()
+				encoder.outputFormat = .xml
+				let data = try encoder.encode(languageEntries)
+				try data.write(to: fileURL, options: [.atomic])
+			}
 		}
 	}
 }

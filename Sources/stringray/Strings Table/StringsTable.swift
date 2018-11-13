@@ -9,170 +9,146 @@
 import Foundation
 
 struct StringsTable: Codable {
-	struct Entry: Codable, Hashable {
-		struct Comment: Codable, Hashable, CustomStringConvertible {
-			let line: Int
-			let value: String
-			
-			var description: String {
-				return "/* \(value) */"
-			}
-		}
-		struct KeyedValue: Codable, Hashable, CustomStringConvertible {
-			let line: Int
-			let key: String
-			let value: String
-			
-			var description: String {
-				return "\"\(key)\" = \"\(value)\";"
-			}
-		}
-
-		let comment: Comment?
-		let keyedValue: KeyedValue
-		
-		public static func ==(lhs: Entry, rhs: Entry) -> Bool {
-			return lhs.keyedValue.key == rhs.keyedValue.key
-		}
-		
-		public func hash(into hasher: inout Hasher) {
-			hasher.combine(keyedValue.key)
-		}
-	}
-	
-	private enum CodingKeys: String, CodingKey {
-		case baseURL
-		case entries
-	}
-	
-	let baseURL: URL
-	var entries: [String: OrderedSet<Entry>] = [:] {
-		didSet {
-			if oldValue != entries {
-				mutated = true
-			}
-		}
-	}
-	
-	var baseLocale: String {
-		return baseURL.deletingLastPathComponent().lastPathComponent
-	}
-	
-	var baseEntries: OrderedSet<Entry> {
-		return entries[baseLocale] ?? []
-	}
-	
-	var mutated: Bool = false
-	
-	var resourceDirectory: URL {
-		return baseURL.deletingLastPathComponent().deletingLastPathComponent()
-	}
-	
-	init(url: URL) throws {
-		self.baseURL = url
-		self.entries = try StringsTable.loadAllEntries(from: resourceDirectory, fileName: url.lastPathComponent)
-	}
-	
-	private init(baseURL: URL, entries: [String: OrderedSet<Entry>]) {
-		self.baseURL = baseURL
-		self.entries = entries
-	}
-	
-	private static func loadEntries(from url: URL) throws -> OrderedSet<Entry> {
-		func lineNumber(scanLocation: Int, newlineLocations: [Int]) -> Int {
-			var lastIndex = 0
-			for (index, newlineLocation) in newlineLocations.enumerated() {
-				if newlineLocation > scanLocation {
-					break
-				}
-				lastIndex = index
-			}
-			return lastIndex
-		}
-		
-		let regex = try NSRegularExpression(pattern: "\"(?<key>.*)\"\\s*=\\s*\"(?<value>.*)\"", options: [])
-		let baseString = try String(contentsOf: url)
-		
-		var newlineLocations: [Int] = []
-		baseString.enumerateSubstrings(in: baseString.startIndex..<baseString.endIndex, options: [.byLines, .substringNotRequired]) { (_, substringRange, _, stop) in
-			newlineLocations.append(substringRange.lowerBound.encodedOffset)
-		}
-		
-		var entries: [Entry] = []
-		let scanner = Scanner(string: baseString)
-		while !scanner.isAtEnd {
-			var comment: Entry.Comment?
-			if scanner.scanString("/*", into: nil) {
-				var scannedComment: NSString?
-				let location = lineNumber(scanLocation: scanner.scanLocation, newlineLocations: newlineLocations)
-				scanner.scanUpTo("*/\n", into: &scannedComment)
-				scanner.scanString("*/\n", into: nil)
-				if let scannedComment = scannedComment?.trimmingCharacters(in: CharacterSet.whitespaces) as String? {
-					comment = Entry.Comment(line: location, value: scannedComment)
-				}
-			}
-			scanner.scanCharacters(from: .whitespacesAndNewlines, into: nil)
-			var scannedString: NSString?
-			scanner.scanUpTo(";\n", into: &scannedString)
-			scanner.scanString(";\n", into: nil)
-			let keyValueLocation = lineNumber(scanLocation: scanner.scanLocation, newlineLocations: newlineLocations)
-			
-			if let scannedString = scannedString {
-				regex.enumerateMatches(in: scannedString as String, options: [], range: NSRange(location: 0, length: scannedString.length)) { (result, flags, done) in
-					guard let result = result else { return }
-					let key = scannedString.substring(with: result.range(withName: "key"))
-					let value = scannedString.substring(with: result.range(withName: "value"))
-					let keyedValue = Entry.KeyedValue(line: keyValueLocation, key: key, value: value)
-					let entry = Entry(comment: comment, keyedValue: keyedValue)
-					entries.append(entry)
-				}
-			}
-		}
-		return OrderedSet(entries)
-	}
-	
-	private static func loadAllEntries(from url: URL, fileName: String) throws -> [String: OrderedSet<Entry>] {
-		let languageDirectories = try FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil, options: []).filter({ (url) -> Bool in
+	private static func lprojURLs(from url: URL, tableName: String) throws -> [URL] {
+		let directories = try FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil, options: []).filter { (url) -> Bool in
 			return url.pathExtension == "lproj"
-		})
-		var languageEntries: [String: OrderedSet<Entry>] = [:]
-		try languageDirectories.forEach {
-			let key = $0.lastPathComponent
-			let localizedEntriesURL = $0.appendingPathComponent(fileName)
-			if let reachable = try? localizedEntriesURL.checkResourceIsReachable(), reachable == true {
-				languageEntries[key] = try loadEntries(from: localizedEntriesURL)
+		}
+		return directories
+	}
+	
+	private static func loadEntries(from url: URL, tableName: String) throws -> EntriesType {
+		var languageEntries: EntriesType = [:]
+		try lprojURLs(from: url, tableName: tableName).forEach {
+			let key = $0.deletingPathExtension().lastPathComponent
+			let stringsTableURL = $0.appendingPathComponent(tableName).appendingPathExtension("strings")
+			if let reachable = try? stringsTableURL.checkResourceIsReachable(), reachable == true {
+				languageEntries[key] = try Entry.load(from: stringsTableURL)
 			}
 		}
 		return languageEntries
 	}
 	
-	func withKeys(matching: [Match]) -> StringsTable {
-		var filteredEntries: [String: OrderedSet<Entry>] = [:]
-		for (languageId, languageEntries) in entries {
-			let matchingEntries = languageEntries.filter { entry in
-				return matching.contains(where: { (matcher) -> Bool in
-					switch matcher {
-					case .prefix(let prefix):
-						return entry.keyedValue.key.hasPrefix(prefix)
-					case .regex(_): // TODO: support this eventually
-						return false
-					}
-				})
+	private static func loadDictEntries(from url: URL, tableName: String) throws -> DictEntriesType {
+		var languageEntries: DictEntriesType = [:]
+		try lprojURLs(from: url, tableName: tableName).forEach {
+			let key = $0.deletingPathExtension().lastPathComponent
+			let stringsDictTableURL = $0.appendingPathComponent(tableName).appendingPathExtension("stringsdict")
+			if let reachable = try? stringsDictTableURL.checkResourceIsReachable(), reachable == true {
+				languageEntries[key] = try DictEntry.load(from: stringsDictTableURL)
 			}
-			filteredEntries[languageId] = OrderedSet(matchingEntries)
 		}
-		return StringsTable(baseURL: baseURL, entries: filteredEntries)
+		return languageEntries
+	}
+	
+	typealias EntriesType = [String: OrderedSet<Entry>]
+	typealias DictEntriesType = [String: [String: DictEntry]]
+	private enum CodingKeys: String, CodingKey {
+		case name
+		case base
+		case entries
+		case dictEntries
+	}
+	
+	let name: String
+	let base: String
+	private(set) var entries: EntriesType = [:]
+	private(set) var dictEntries: DictEntriesType = [:]
+	
+	private var allLanguageKeys: Set<String> {
+		var keys: Set<String> = []
+		keys.formUnion(entries.keys)
+		keys.formUnion(dictEntries.keys)
+		return keys
+	}
+	
+	var baseEntries: OrderedSet<Entry> {
+		return entries[base] ?? []
+	}
+	
+	var baseDictEntries: [String: DictEntry] {
+		return dictEntries[base] ?? [:]
+	}
+	
+	private enum Error: String, Swift.Error {
+		case invalidURL
+	}
+	
+	/// Initializes a `StringsTable` from an existing strings table on disk.
+	///
+	/// - Parameter url: File URL to the base localizations table. Example: `en.lproj/Shopify.strings`
+	/// - Throws:
+	init(url: URL) throws {
+		let resourceDirectory = url.resourceDirectory
+		guard let (name, base) = url.tableComponents else {
+			throw Error.invalidURL
+		}
+		try self.init(url: resourceDirectory, name: name, base: base)
+	}
+	
+	init(url: URL, name: String, base: String) throws {
+		self.name = name
+		self.base = base
+		self.entries = try StringsTable.loadEntries(from: url, tableName: name)
+		self.dictEntries = try StringsTable.loadDictEntries(from: url, tableName: name)
+	}
+	
+	init(name: String, base: String, entries: EntriesType, dictEntries: DictEntriesType) {
+		self.name = name
+		self.base = base
+		self.entries = entries
+		self.dictEntries = dictEntries
+	}
+	
+	private func entries(for languageKey: String, matching: [Match]) -> OrderedSet<Entry>? {
+		guard let matchingEntries = entries[languageKey]?.filter({ (entry) -> Bool in
+			return matching.matches(key: entry.keyedValue.key)
+		}) else { return nil }
+		return OrderedSet(matchingEntries)
+	}
+	
+	func withKeys(matching: [Match]) -> StringsTable {
+		var filteredEntries: EntriesType = [:]
+		var filteredDictEntries: DictEntriesType = [:]
+		
+		for languageKey in allLanguageKeys {
+			if let matchingEntries = entries(for: languageKey, matching: matching) {
+				filteredEntries[languageKey] = matchingEntries
+			}
+			
+			if let matchingDictEntries = dictEntries[languageKey]?.filter({ (key, value) -> Bool in
+				return matching.matches(key: key)
+			}) {
+				filteredDictEntries[languageKey] = matchingDictEntries
+			}
+		}
+		
+		var table = self
+		table.entries = filteredEntries
+		table.dictEntries = filteredDictEntries
+		return table
 	}
 	
 	mutating func addEntries(from table: StringsTable) {
 		for (languageId, languageEntries) in table.entries {
 			entries[languageId, default: []].formUnion(languageEntries)
 		}
+		
+		for (languageId, languageEntries) in table.dictEntries {
+			dictEntries[languageId, default: [:]].merge(languageEntries, uniquingKeysWith: { (lhs, rhs) in
+				return rhs
+			})
+		}
 	}
 	
 	mutating func removeEntries(from table: StringsTable) {
 		for (languageId, languageEntries) in table.entries {
 			entries[languageId]?.subtract(languageEntries)
+		}
+		
+		for (languageId, languageEntries) in table.dictEntries {
+			languageEntries.keys.forEach {
+				dictEntries[languageId]?.removeValue(forKey: $0)
+			}
 		}
 	}
 	
@@ -183,7 +159,6 @@ struct StringsTable: Codable {
 				return lhs.keyedValue.key < rhs.keyedValue.key
 			}
 			entries.updateValue(sortedLanguageEntries, forKey: languageId)
-			
 		}
 	}
 }

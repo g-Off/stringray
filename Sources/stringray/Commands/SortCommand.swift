@@ -34,17 +34,6 @@ struct SortCommand: Command {
 	}
 	
 	private func sort(url: Foundation.URL) throws {
-		try save(table: try loadTable(for: url), options: [.writeFile, .writeCache, .sortedKeys])
+		try write(to: url, table: try StringsTable(url: url), options: [.writeFile, .sortedKeys])
 	}
 }
-//class SortCommand: MutatingCommand, Command {
-//	let name: String = "sort"
-//	
-//	let param = Parameter()
-//	
-
-//	
-//	var shortDescription: String {
-//		return "Sorts the strings by key in alphabetic ascending order."
-//	}
-//}
