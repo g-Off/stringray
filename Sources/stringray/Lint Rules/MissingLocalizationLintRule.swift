@@ -22,7 +22,7 @@ struct MissingLocalizationLintRule: LintRule {
 			for missingEntry in missingEntries {
 				let file = URL(fileURLWithPath: "\(entry.key).lproj/\(table.name).strings", relativeTo: url)
 				let location = LintRuleViolation.Location(file: file, line: nil)
-				let reason = "\(entry.key), \(missingEntry.keyedValue.key)"
+				let reason = "\(entry.key), \(missingEntry.key)"
 				let violation = LintRuleViolation(location: location, severity: .warning, reason: reason)
 				violations.append(violation)
 			}

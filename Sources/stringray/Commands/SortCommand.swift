@@ -13,7 +13,7 @@ struct SortCommand: Command {
 		var inputFile: Foundation.URL!
 	}
 	let command: String = "sort"
-	let overview: String = "Sorts the keys in the given strings table."
+	let overview: String = "Sorts the given strings table alphabetically by key."
 	
 	private let binder: ArgumentBinder<Arguments>
 	
@@ -34,6 +34,8 @@ struct SortCommand: Command {
 	}
 	
 	private func sort(url: Foundation.URL) throws {
-		try write(to: url, table: try StringsTable(url: url), options: [.writeFile, .sortedKeys])
+		var table = try StringsTable(url: url)
+		table.sort()
+		try write(to: url, table: table)
 	}
 }

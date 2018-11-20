@@ -56,6 +56,7 @@ extension OrderedSet: SetAlgebra {
 		return result
 	}
 	
+	@discardableResult
 	mutating func update(with newMember: Element) -> Element? {
 		if contains(newMember), let index = orderedStorage.index(of: newMember) {
 			orderedStorage[index] = newMember

@@ -11,5 +11,6 @@ import Foundation
 var registry = CommandRegistry(usage: "<command> <options>", overview: "")
 registry.register(command: MoveCommand.self)
 registry.register(command: SortCommand.self)
+registry.register(command: RenameCommand.self)
 registry.register(command: LintCommand.self)
 registry.run()

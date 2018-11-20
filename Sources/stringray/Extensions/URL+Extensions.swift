@@ -9,11 +9,24 @@ import Foundation
 
 extension URL {
 	var tableName: String? {
-		return tableComponents?.name
+		var url = self
+		if ["strings", "stringsdict"].contains(url.pathExtension) {
+			url.deletePathExtension()
+			return url.lastPathComponent
+		}
+		return nil
 	}
 	
-	var locale: String? {
-		return tableComponents?.locale
+	var locale: Locale? {
+		var url = self
+		if ["strings", "stringsdict"].contains(url.pathExtension) {
+			url.deleteLastPathComponent()
+		}
+		if url.pathExtension == "lproj" {
+			url.deletePathExtension()
+			return Locale(identifier: url.lastPathComponent)
+		}
+		return nil
 	}
 	
 	var resourceDirectory: URL {
@@ -25,15 +38,6 @@ extension URL {
 			dir.deleteLastPathComponent()
 		}
 		return dir
-	}
-	
-	var tableComponents: (name: String, locale: String)? {
-		guard pathExtension == "strings" || pathExtension == "stringsdict" else { return nil }
-		let name = deletingPathExtension().lastPathComponent
-		let lproj = deletingLastPathComponent()
-		guard lproj.pathExtension == "lproj" else { return nil }
-		let base = lproj.deletingPathExtension().lastPathComponent
-		return (name, base)
 	}
 	
 	var lprojURLs: [URL] {
@@ -59,16 +63,16 @@ extension URL {
 		}
 	}
 	
-	func stringsURL(tableName: String, locale: String) throws -> URL {
+	func stringsURL(tableName: String, locale: Locale) throws -> URL {
 		return try fileURL(tableName: tableName, locale: locale, ext: "strings", create: true)
 	}
 	
-	func stringsDictURL(tableName: String, locale: String) throws -> URL {
+	func stringsDictURL(tableName: String, locale: Locale) throws -> URL {
 		return try fileURL(tableName: tableName, locale: locale, ext: "stringsdict", create: true)
 	}
 	
-	private func fileURL(tableName: String, locale: String, ext: String, create: Bool) throws -> URL {
-		let lprojURL = appendingPathComponent("\(locale).lproj", isDirectory: true)
+	private func fileURL(tableName: String, locale: Locale, ext: String, create: Bool) throws -> URL {
+		let lprojURL = appendingPathComponent("\(locale.identifier).lproj", isDirectory: true)
 		if create {
 			try FileManager.default.createDirectory(at: lprojURL, withIntermediateDirectories: true, attributes: nil)
 		}

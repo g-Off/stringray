@@ -8,40 +8,10 @@
 
 import Foundation
 
-struct StringsTable: Codable {
-	private static func lprojURLs(from url: URL, tableName: String) throws -> [URL] {
-		let directories = try FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil, options: []).filter { (url) -> Bool in
-			return url.pathExtension == "lproj"
-		}
-		return directories
-	}
+struct StringsTable: Codable {	
+	typealias EntriesType = [Locale: OrderedSet<Entry>]
+	typealias DictEntriesType = [Locale: [String: DictEntry]]
 	
-	private static func loadEntries(from url: URL, tableName: String) throws -> EntriesType {
-		var languageEntries: EntriesType = [:]
-		try lprojURLs(from: url, tableName: tableName).forEach {
-			let key = $0.deletingPathExtension().lastPathComponent
-			let stringsTableURL = $0.appendingPathComponent(tableName).appendingPathExtension("strings")
-			if let reachable = try? stringsTableURL.checkResourceIsReachable(), reachable == true {
-				languageEntries[key] = try Entry.load(from: stringsTableURL)
-			}
-		}
-		return languageEntries
-	}
-	
-	private static func loadDictEntries(from url: URL, tableName: String) throws -> DictEntriesType {
-		var languageEntries: DictEntriesType = [:]
-		try lprojURLs(from: url, tableName: tableName).forEach {
-			let key = $0.deletingPathExtension().lastPathComponent
-			let stringsDictTableURL = $0.appendingPathComponent(tableName).appendingPathExtension("stringsdict")
-			if let reachable = try? stringsDictTableURL.checkResourceIsReachable(), reachable == true {
-				languageEntries[key] = try DictEntry.load(from: stringsDictTableURL)
-			}
-		}
-		return languageEntries
-	}
-	
-	typealias EntriesType = [String: OrderedSet<Entry>]
-	typealias DictEntriesType = [String: [String: DictEntry]]
 	private enum CodingKeys: String, CodingKey {
 		case name
 		case base
@@ -50,12 +20,12 @@ struct StringsTable: Codable {
 	}
 	
 	let name: String
-	let base: String
+	let base: Locale
 	private(set) var entries: EntriesType = [:]
 	private(set) var dictEntries: DictEntriesType = [:]
 	
-	private var allLanguageKeys: Set<String> {
-		var keys: Set<String> = []
+	private var allLanguageKeys: Set<Locale> {
+		var keys: Set<Locale> = []
 		keys.formUnion(entries.keys)
 		keys.formUnion(dictEntries.keys)
 		return keys
@@ -79,29 +49,41 @@ struct StringsTable: Codable {
 	/// - Throws:
 	init(url: URL) throws {
 		let resourceDirectory = url.resourceDirectory
-		guard let (name, base) = url.tableComponents else {
+		guard let name = url.tableName, let base = url.locale else {
 			throw Error.invalidURL
 		}
 		try self.init(url: resourceDirectory, name: name, base: base)
 	}
 	
-	init(url: URL, name: String, base: String) throws {
+	init(url: URL, name: String, base: Locale) throws {
 		self.name = name
 		self.base = base
-		self.entries = try StringsTable.loadEntries(from: url, tableName: name)
-		self.dictEntries = try StringsTable.loadDictEntries(from: url, tableName: name)
+		
+		try url.lprojURLs.forEach {
+			guard let locale = $0.locale else { return }
+			
+			let stringsTableURL = $0.appendingPathComponent(name).appendingPathExtension("strings")
+			if let reachable = try? stringsTableURL.checkResourceIsReachable(), reachable == true {
+				entries[locale] = try Entry.load(from: stringsTableURL, options: [])
+			}
+			
+			let stringsDictTableURL = $0.appendingPathComponent(name).appendingPathExtension("stringsdict")
+			if let reachable = try? stringsDictTableURL.checkResourceIsReachable(), reachable == true {
+				dictEntries[locale] = try DictEntry.load(from: stringsDictTableURL)
+			}
+		}
 	}
 	
-	init(name: String, base: String, entries: EntriesType, dictEntries: DictEntriesType) {
+	init(name: String, base: Locale, entries: EntriesType, dictEntries: DictEntriesType) {
 		self.name = name
 		self.base = base
 		self.entries = entries
 		self.dictEntries = dictEntries
 	}
 	
-	private func entries(for languageKey: String, matching: [Match]) -> OrderedSet<Entry>? {
-		guard let matchingEntries = entries[languageKey]?.filter({ (entry) -> Bool in
-			return matching.matches(key: entry.keyedValue.key)
+	private func entries(for locale: Locale, matching: [Match]) -> OrderedSet<Entry>? {
+		guard let matchingEntries = entries[locale]?.filter({ (entry) -> Bool in
+			return matching.matches(key: entry.key)
 		}) else { return nil }
 		return OrderedSet(matchingEntries)
 	}
@@ -110,15 +92,15 @@ struct StringsTable: Codable {
 		var filteredEntries: EntriesType = [:]
 		var filteredDictEntries: DictEntriesType = [:]
 		
-		for languageKey in allLanguageKeys {
-			if let matchingEntries = entries(for: languageKey, matching: matching) {
-				filteredEntries[languageKey] = matchingEntries
+		for locale in allLanguageKeys {
+			if let matchingEntries = entries(for: locale, matching: matching) {
+				filteredEntries[locale] = matchingEntries
 			}
 			
-			if let matchingDictEntries = dictEntries[languageKey]?.filter({ (key, value) -> Bool in
+			if let matchingDictEntries = dictEntries[locale]?.filter({ (key, value) -> Bool in
 				return matching.matches(key: key)
 			}) {
-				filteredDictEntries[languageKey] = matchingDictEntries
+				filteredDictEntries[locale] = matchingDictEntries
 			}
 		}
 		
@@ -156,9 +138,68 @@ struct StringsTable: Codable {
 		for (languageId, languageEntries) in entries {
 			var sortedLanguageEntries = languageEntries
 			sortedLanguageEntries.sort { (lhs, rhs) -> Bool in
-				return lhs.keyedValue.key < rhs.keyedValue.key
+				return lhs.key < rhs.key
 			}
 			entries.updateValue(sortedLanguageEntries, forKey: languageId)
 		}
+	}
+	
+	mutating func remove(keys: Set<String>) {
+		for (locale, entry) in entries {
+			let filtered = entry.filter {
+				return !keys.contains($0.key)
+			}
+			entries[locale] = OrderedSet(filtered)
+		}
+	}
+	
+	private mutating func replace(entry: Entry, with otherEntry: Entry, locale: Locale) {
+		guard let index = entries[locale]?.index(of: entry) else { return }
+		entries[locale]?[index] = otherEntry
+	}
+	
+	private mutating func replace(key: String, with otherKey: String, locale: Locale) {
+		guard let entry = dictEntries[locale]?[key] else { return }
+		dictEntries[locale]?[otherKey] = entry
+	}
+	
+	mutating func replace(matches: [Match], replacements replacementStrings: [String]) {
+		for (match, replacement) in zip(matches, replacementStrings) {
+			for localizedEntries in entriesMatching(match) {
+				localizedEntries.value.forEach {
+					var entry = $0
+					if let replacementKey = match.replacing(with: replacement, in: entry.key) {
+						entry.key = replacementKey
+					}
+					replace(entry: $0, with: entry, locale: localizedEntries.key)
+				}
+			}
+			
+			for localizedEntries in dictEntriesMatching(match) {
+				localizedEntries.value.forEach {
+					if let replacementKey = match.replacing(with: replacement, in: $0.key) {
+						replace(key: $0.key, with: replacementKey, locale: localizedEntries.key)
+					}
+				}
+			}
+		}
+	}
+	
+	// MARK: -
+	
+	private func entriesMatching(_ match: Match) -> EntriesType {
+		var matches: EntriesType = [:]
+		for localizedEntry in entries {
+			matches[localizedEntry.key] = OrderedSet<Entry>(localizedEntry.value.filter({ match.matches(key: $0.key) }))
+		}
+		return matches
+	}
+	
+	private func dictEntriesMatching(_ match: Match) -> DictEntriesType {
+		var matches: DictEntriesType = [:]
+		for localizedEntry in dictEntries {
+			matches[localizedEntry.key] = localizedEntry.value.filter { match.matches(key: $0.key) }
+		}
+		return matches
 	}
 }
