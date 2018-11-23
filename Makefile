@@ -1,14 +1,31 @@
+TOOL_NAME = stringray
+VERSION = 0.1.0
+
+REPO = https://github.com/g-Off/$(TOOL_NAME)
+RELEASE_TAR = $(REPO)/archive/$(VERSION).tar.gz
+SHA = $(shell curl -L -s $(RELEASE_TAR) | shasum -a 256 | sed 's/ .*//')
+
+PREFIX = /usr/local
+INSTALL_PATH = $(PREFIX)/bin/$(TOOL_NAME)
+BUILD_PATH = $(shell swift build --show-bin-path -c $(CONFIGURATION))/$(TOOL_NAME)
+
 SWIFTC_FLAGS = -Xswiftc "-target" -Xswiftc "x86_64-apple-macosx10.13"
+
 CONFIGURATION = debug
 
 debug: build
 
-release: CONFIGURATION = release
-release: SWIFTC_FLAGS += --static-swift-stdlib
-release: clean build
+release:
+	@echo $(SHA)
 	
 build:
 	swift build --configuration $(CONFIGURATION) $(SWIFTC_FLAGS)
+
+install: CONFIGURATION = release	
+install: SWIFTC_FLAGS += --static-swift-stdlib --disable-sandbox
+install: clean build
+	mkdir -p $(PREFIX)/bin
+	cp -f $(BUILD_PATH) $(INSTALL_PATH)
 	
 test:
 	swift test $(SWIFTC_FLAGS)
@@ -19,4 +36,4 @@ xcode:
 clean:
 	swift package clean
 	
-.PHONY: debug release build test xcode clean
+.PHONY: debug release build test xcode clean install
