@@ -4,6 +4,7 @@ CONFIGURATION = debug
 debug: build
 
 release: CONFIGURATION = release
+release: SWIFTC_FLAGS += --static-swift-stdlib
 release: clean build
 	
 build:

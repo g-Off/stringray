@@ -13,8 +13,17 @@ struct CommandRegistry {
 	private let parser: ArgumentParser
 	private var commands: [Command] = []
 	
-	init(usage: String, overview: String) {
-		parser = ArgumentParser(usage: usage, overview: overview)
+	private let versionOption: OptionArgument<Bool>?
+	private let version: Version?
+	
+	init(usage: String, overview: String, version: Version? = nil) {
+		self.parser = ArgumentParser(usage: usage, overview: overview)
+		self.version = version
+		if version != nil {
+			self.versionOption = parser.add(option: "--version", shortName: "-v", kind: Bool.self, usage: "Version", completion: nil)
+		} else {
+			self.versionOption = nil
+		}
 	}
 	
 	mutating func register(command: Command.Type) {
@@ -40,6 +49,11 @@ struct CommandRegistry {
 	}
 	
 	private func process(arguments: ArgumentParser.Result) throws {
+		if let versionOption = versionOption, arguments.get(versionOption) == true, let version = version {
+			stdoutStream.write("\(version)\n")
+			stdoutStream.flush()
+			return
+		}
 		guard let subparser = arguments.subparser(parser),
 			let command = commands.first(where: { $0.command == subparser }) else {
 				parser.printUsage(on: stdoutStream)

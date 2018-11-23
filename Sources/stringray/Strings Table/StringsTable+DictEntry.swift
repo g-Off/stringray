@@ -9,12 +9,6 @@ import Foundation
 
 extension StringsTable {
 	struct DictEntry: Codable, Hashable {
-		static func load(from url: URL) throws -> [String: DictEntry] {
-			let data = try Data(contentsOf: url)
-			let decoder = PropertyListDecoder()
-			return try decoder.decode([String: DictEntry].self, from: data)
-		}
-		
 		private struct _DictKey: CodingKey, Equatable {
 			var stringValue: String
 			var intValue: Int?

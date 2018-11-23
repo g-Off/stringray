@@ -70,6 +70,17 @@ public enum PlaceholderType: String, Codable {
 			// TODO: throw when nil
 			return nil
 		}
+		
 		return placeholders
+	}
+	
+	static func orderedPlaceholders(from formatString: String) throws -> [PlaceholderType] {
+		let unsorted = try placeholders(from: formatString)
+		var sorted = Array(repeating: PlaceholderType.unknown, count: unsorted.count)
+		for (index, element) in unsorted.enumerated() {
+			let actualIndex = element.1?.advanced(by: -1) ?? index
+			sorted[actualIndex] = element.0
+		}
+		return sorted
 	}
 }

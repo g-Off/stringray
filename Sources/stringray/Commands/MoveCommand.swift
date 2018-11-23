@@ -47,8 +47,9 @@ struct MoveCommand: Command {
 	}
 	
 	private func move(from: Foundation.URL, to: Foundation.URL, matching: [Match]) throws {
-		var fromTable = try StringsTable(url: from)
-		var toTable = try StringsTable(url: to)
+		let loader = StringsTableLoader()
+		var fromTable = try loader.load(url: from)
+		var toTable = try loader.load(url: to)
 		
 		let filteredTable = fromTable.withKeys(matching: matching)
 		toTable.addEntries(from: filteredTable)

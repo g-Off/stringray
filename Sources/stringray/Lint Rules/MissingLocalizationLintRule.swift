@@ -8,7 +8,9 @@
 import Foundation
 
 struct MissingLocalizationLintRule: LintRule {
-	func scan(table: StringsTable, url: URL) -> [LintRuleViolation] {
+	let info: RuleInfo = RuleInfo(identifier: "missing_localization", name: "Missing Localization", description: "")
+	
+	func scan(table: StringsTable, url: URL) throws -> [LintRuleViolation] {
 		return scanEntries(table: table, url: url) + scanDictEntries(table: table, url: url)
 	}
 	
@@ -22,8 +24,8 @@ struct MissingLocalizationLintRule: LintRule {
 			for missingEntry in missingEntries {
 				let file = URL(fileURLWithPath: "\(entry.key).lproj/\(table.name).strings", relativeTo: url)
 				let location = LintRuleViolation.Location(file: file, line: nil)
-				let reason = "\(entry.key), \(missingEntry.key)"
-				let violation = LintRuleViolation(location: location, severity: .warning, reason: reason)
+				let reason = "Missing \(missingEntry.key)"
+				let violation = LintRuleViolation(locale: entry.key, location: location, severity: .warning, reason: reason)
 				violations.append(violation)
 			}
 		}
@@ -40,8 +42,8 @@ struct MissingLocalizationLintRule: LintRule {
 			for missingDictEntry in missingDictEntries {
 				let file = URL(fileURLWithPath: "\(dictEntry.key).lproj/\(table.name).stringsdict", relativeTo: url)
 				let location = LintRuleViolation.Location(file: file, line: nil)
-				let reason = "\(dictEntry.key), \(missingDictEntry.key)"
-				let violation = LintRuleViolation(location: location, severity: .warning, reason: reason)
+				let reason = "Missing \(missingDictEntry.key)"
+				let violation = LintRuleViolation(locale: dictEntry.key, location: location, severity: .warning, reason: reason)
 				violations.append(violation)
 			}
 		}

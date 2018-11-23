@@ -8,7 +8,9 @@
 import Foundation
 
 struct OrphanedLocalizationLintRule: LintRule {
-	func scan(table: StringsTable, url: URL) -> [LintRuleViolation] {
+	let info: RuleInfo = RuleInfo(identifier: "orphaned_localization", name: "Orphaned Localization", description: "")
+	
+	func scan(table: StringsTable, url: URL) throws -> [LintRuleViolation] {
 		var violations: [LintRuleViolation] = []
 		var entries = table.entries
 		entries.removeValue(forKey: table.base)
@@ -19,8 +21,8 @@ struct OrphanedLocalizationLintRule: LintRule {
 				let file = URL(fileURLWithPath: "\(entry.key).lproj/\(table.name).strings", relativeTo: url)
 				guard let line = orphanedEntry.location?.line else { continue }
 				let location = LintRuleViolation.Location(file: file, line: line)
-				let reason = "\(entry.key), \(orphanedEntry.key)"
-				let violation = LintRuleViolation(location: location, severity: .warning, reason: reason)
+				let reason = "Orphaned \(orphanedEntry.key)"
+				let violation = LintRuleViolation(locale: entry.key, location: location, severity: .warning, reason: reason)
 				violations.append(violation)
 			}
 		}

@@ -34,7 +34,7 @@ struct SortCommand: Command {
 	}
 	
 	private func sort(url: Foundation.URL) throws {
-		var table = try StringsTable(url: url)
+		var table = try StringsTableLoader().load(url: url)
 		table.sort()
 		try write(to: url, table: table)
 	}

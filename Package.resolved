@@ -9,6 +9,24 @@
           "revision": "235aacc514cb81a6881364b0fedcb3dd083228f3",
           "version": "0.3.0"
         }
+      },
+      {
+        "package": "SwiftyTextTable",
+        "repositoryURL": "https://github.com/scottrhoyt/SwiftyTextTable.git",
+        "state": {
+          "branch": null,
+          "revision": "7b8661865f0d9590a4b7c146237fecd99f3d8406",
+          "version": "0.8.2"
+        }
+      },
+      {
+        "package": "Yams",
+        "repositoryURL": "https://github.com/jpsim/Yams.git",
+        "state": {
+          "branch": null,
+          "revision": "26ab35f50ea891e8edefcc9d975db2f6b67e1d68",
+          "version": "1.0.1"
+        }
       }
     ]
   },

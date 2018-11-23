@@ -35,43 +35,14 @@ struct StringsTable: Codable {
 		return entries[base] ?? []
 	}
 	
+	var localizedEntries: EntriesType {
+		var localizedEntries = entries
+		localizedEntries.removeValue(forKey: base)
+		return localizedEntries
+	}
+	
 	var baseDictEntries: [String: DictEntry] {
 		return dictEntries[base] ?? [:]
-	}
-	
-	private enum Error: String, Swift.Error {
-		case invalidURL
-	}
-	
-	/// Initializes a `StringsTable` from an existing strings table on disk.
-	///
-	/// - Parameter url: File URL to the base localizations table. Example: `en.lproj/Shopify.strings`
-	/// - Throws:
-	init(url: URL) throws {
-		let resourceDirectory = url.resourceDirectory
-		guard let name = url.tableName, let base = url.locale else {
-			throw Error.invalidURL
-		}
-		try self.init(url: resourceDirectory, name: name, base: base)
-	}
-	
-	init(url: URL, name: String, base: Locale) throws {
-		self.name = name
-		self.base = base
-		
-		try url.lprojURLs.forEach {
-			guard let locale = $0.locale else { return }
-			
-			let stringsTableURL = $0.appendingPathComponent(name).appendingPathExtension("strings")
-			if let reachable = try? stringsTableURL.checkResourceIsReachable(), reachable == true {
-				entries[locale] = try Entry.load(from: stringsTableURL, options: [])
-			}
-			
-			let stringsDictTableURL = $0.appendingPathComponent(name).appendingPathExtension("stringsdict")
-			if let reachable = try? stringsDictTableURL.checkResourceIsReachable(), reachable == true {
-				dictEntries[locale] = try DictEntry.load(from: stringsDictTableURL)
-			}
-		}
 	}
 	
 	init(name: String, base: Locale, entries: EntriesType, dictEntries: DictEntriesType) {
