@@ -36,6 +36,6 @@ struct SortCommand: Command {
 	private func sort(url: Foundation.URL) throws {
 		var table = try StringsTableLoader().load(url: url)
 		table.sort()
-		try write(to: url, table: table)
+		try write(to: url.resourceDirectory, table: table)
 	}
 }
