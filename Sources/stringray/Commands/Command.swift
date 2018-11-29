@@ -18,7 +18,7 @@ protocol Command {
 
 extension Command {
 	func write(to url: Foundation.URL, table: StringsTable) throws {
-		for (languageId, languageEntries) in table.entries {
+		for (languageId, languageEntries) in table.entries where !languageEntries.isEmpty {
 			let fileURL = try url.stringsURL(tableName: table.name, locale: languageId)
 			guard let outputStream = OutputStream(url: fileURL, append: false) else { continue }
 			outputStream.open()
@@ -33,7 +33,7 @@ extension Command {
 			outputStream.close()
 		}
 		
-		for (languageId, languageEntries) in table.dictEntries {
+		for (languageId, languageEntries) in table.dictEntries where !languageEntries.isEmpty {
 			let fileURL = try url.stringsDictURL(tableName: table.name, locale: languageId)
 			let encoder = PropertyListEncoder()
 			encoder.outputFormat = .xml
