@@ -1,5 +1,5 @@
 TOOL_NAME = stringray
-VERSION = 0.1.0
+VERSION = 0.1.1
 
 REPO = https://github.com/g-Off/$(TOOL_NAME)
 RELEASE_TAR = $(REPO)/archive/$(VERSION).tar.gz
