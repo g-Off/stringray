@@ -25,7 +25,8 @@ struct LintCommand: Command {
 		binder = ArgumentBinder<Arguments>()
 		let subparser = parser.add(subparser: command, overview: overview)
 		
-		let inputFile = subparser.add(option: "--input", shortName: "-i", kind: [PathArgument].self, strategy: .oneByOne, usage: nil, completion: .filename)
+		let inputFileUsage = "Specify the file path of the strings file to run lint on"
+		let inputFile = subparser.add(option: "--input", shortName: "-i", kind: [PathArgument].self, strategy: .oneByOne, usage: inputFileUsage, completion: .filename)
 		binder.bind(option: inputFile) { (arguments, inputFiles) in
 			arguments.inputFile = inputFiles.map { $0.path }
 		}
