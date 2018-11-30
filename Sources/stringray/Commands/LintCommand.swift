@@ -25,10 +25,10 @@ struct LintCommand: Command {
 		binder = ArgumentBinder<Arguments>()
 		let subparser = parser.add(subparser: command, overview: overview)
 		
-		let inputFileUsage = "Specify the file path of the strings file to run lint on"
-		let inputFile = subparser.add(option: "--input", shortName: "-i", kind: [PathArgument].self, strategy: .oneByOne, usage: inputFileUsage, completion: .filename)
-		binder.bind(option: inputFile) { (arguments, inputFiles) in
-			arguments.inputFile = inputFiles.map { $0.path }
+		let filesUsage = "Specify a list of file paths to the string files to run lint on; If omitted, this will default to the current folder"
+		let files = subparser.add(positional: "files", kind: [PathArgument].self, optional: true, usage: filesUsage, completion: .filename)
+		binder.bind(positional: files) { (arguments, files) in
+			arguments.inputFile = files.map { $0.path }
 		}
 		
 		let listRules = subparser.add(option: "--list", shortName: "-l", kind: Bool.self, usage: "List available rules and default configuration", completion: .none)
@@ -40,11 +40,17 @@ struct LintCommand: Command {
 	func run(with arguments: ArgumentParser.Result) throws {
 		var commandArgs = Arguments()
 		try binder.fill(parseResult: arguments, into: &commandArgs)
+		
 		if commandArgs.listRules {
 			listRules()
-		} else {
-			try lint(files: commandArgs.inputFile)
+			return
 		}
+		
+		if commandArgs.inputFile.isEmpty {
+			commandArgs.inputFile = [AbsolutePath(FileManager.default.currentDirectoryPath)]
+		}
+		try lint(files: commandArgs.inputFile)
+		
 	}
 	
 	private func listRules() {
@@ -75,8 +81,16 @@ struct LintCommand: Command {
 		
 		try files.forEach {
 			let url = URL(fileURLWithPath: $0.asString)
-			let table = try loader.load(url: url)
-			try linter.report(on: table, url: url)
+			print("Linting: \(url.path)")
+			
+			var isDirectory: ObjCBool = false
+			let fileExists = FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory)
+			if fileExists && !isDirectory.boolValue {
+				let table = try loader.load(url: url)
+				try linter.report(on: table, url: url)
+			} else {
+				print("Skipping: \(url.path) | this path is a directory or the file does not exist.")
+			}
 		}
 	}
 }
