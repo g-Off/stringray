@@ -8,8 +8,15 @@
 import Foundation
 
 struct StringsTableLoader {
-	private enum Error: String, Swift.Error {
+	private enum Error: String, Swift.Error, LocalizedError {
 		case invalidURL
+		
+		var errorDescription: String? {
+			switch self {
+			case .invalidURL:
+				return "Invalid string resource URL provided."
+			}
+		}
 	}
 	
 	struct Options: OptionSet {
