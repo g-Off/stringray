@@ -9,11 +9,19 @@ import Foundation
 import Utility
 import Basic
 import SwiftyTextTable
+import XcodeProject
 
 struct LintCommand: Command {
 	private struct Arguments {
 		var inputFile: [AbsolutePath] = []
 		var listRules: Bool = false
+		var configFile: AbsolutePath?
+	}
+	
+	private struct LintInput: Hashable {
+		let resourceURL: Foundation.URL
+		let tableName: String
+		let locale: Locale
 	}
 	
 	let command: String = "lint"
@@ -35,6 +43,11 @@ struct LintCommand: Command {
 		binder.bind(option: listRules) { (arguments, listRules) in
 			arguments.listRules = listRules
 		}
+		
+		let configFileOption = subparser.add(option: "--config", shortName: "-c", kind: PathArgument.self, usage: "Configuration YAML file", completion: .filename)
+		binder.bind(option: configFileOption) { (arguments, configFile) in
+			arguments.configFile = configFile.path
+		}
 	}
 	
 	func run(with arguments: ArgumentParser.Result) throws {
@@ -46,11 +59,70 @@ struct LintCommand: Command {
 			return
 		}
 		
+		let lintInput: [LintInput]
+		var reporter: Reporter = ConsoleReporter()
 		if commandArgs.inputFile.isEmpty {
-			commandArgs.inputFile = [AbsolutePath(FileManager.default.currentDirectoryPath)]
+			let environment = ProcessInfo.processInfo.environment
+			if let xcodeInput = try inputsFromXcode(environment: environment) {
+				lintInput = xcodeInput
+				reporter = XcodeReporter()
+			} else if let currentWorkingDirectory = localFileSystem.currentWorkingDirectory {
+				lintInput = inputs(from: [currentWorkingDirectory])
+			} else {
+				lintInput = []
+			}
+		} else {
+			lintInput = inputs(from: commandArgs.inputFile)
 		}
-		try lint(files: commandArgs.inputFile)
+		try lint(inputs: lintInput, reporter: reporter)
+	}
+	
+	private func inputs(from files: [AbsolutePath]) -> [LintInput] {
+		let inputs: [LintInput] = files.filter {
+			localFileSystem.exists($0) && localFileSystem.isFile($0)
+			}.map {
+				URL(fileURLWithPath: $0.asString)
+			}.compactMap {
+				guard let tableName = $0.tableName else { return nil }
+				guard let locale = $0.locale else { return nil }
+				return LintInput(resourceURL: $0.resourceDirectory, tableName: tableName, locale: locale)
+		}
+		return inputs
+	}
+	
+	private func inputsFromXcode(environment: [String: String]) throws -> [LintInput]? {
+		guard let projectPath = environment["PROJECT_FILE_PATH"],
+			let targetName = environment["TARGETNAME"],
+			let infoPlistPath = environment["INFOPLIST_FILE"],
+			let sourceRoot = environment["SOURCE_ROOT"] else {
+				return nil
+		}
 		
+		let projectURL = URL(fileURLWithPath: projectPath)
+		let sourceRootURL = URL(fileURLWithPath: sourceRoot)
+		let infoPlistURL = URL(fileURLWithPath: infoPlistPath, relativeTo: sourceRootURL)
+		let data = try Data(contentsOf: infoPlistURL)
+		guard let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any], let base = plist["CFBundleDevelopmentRegion"] as? String else {
+			return nil
+		}
+		let locale = Locale(identifier: base)
+		
+		let projectFile = try ProjectFile(url: projectURL)
+		guard let target = projectFile.project.target(named: targetName) else { return nil }
+		guard let resourcesBuildPhase = target.resourcesBuildPhase else { return nil }
+		let variantGroups = resourcesBuildPhase.files.compactMap { $0.fileRef as? PBXVariantGroup }.filter {
+			guard let name = $0.name else { return false }
+			return name.hasSuffix(".strings") || name.hasSuffix(".stringsdict")
+		}
+		let variantGroupsFiles = variantGroups.flatMap {
+			$0.children.compactMap { $0 as? PBXFileReference }.compactMap { $0.url }.filter { $0.pathExtension == "strings" || $0.pathExtension == "stringsdict" }
+		}
+		let allInputs: [LintInput] = variantGroupsFiles.compactMap {
+			guard let tableName = $0.tableName else { return nil }
+			return LintInput(resourceURL: $0.resourceDirectory, tableName: tableName, locale: locale)
+		}
+		let uniqueInputs = Set(allInputs)
+		return Array(uniqueInputs)
 	}
 	
 	private func listRules() {
@@ -74,23 +146,14 @@ struct LintCommand: Command {
 		print(table.render())
 	}
 	
-	private func lint(files: [AbsolutePath]) throws {
+	private func lint(inputs: [LintInput], reporter: Reporter) throws {
 		var loader = StringsTableLoader()
 		loader.options = [.lineNumbers]
-		let linter = Linter(excluded: [])
-		
-		try files.forEach {
-			let url = URL(fileURLWithPath: $0.asString)
-			print("Linting: \(url.path)")
-			
-			var isDirectory: ObjCBool = false
-			let fileExists = FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory)
-			if fileExists && !isDirectory.boolValue {
-				let table = try loader.load(url: url)
-				try linter.report(on: table, url: url)
-			} else {
-				print("Skipping: \(url.path) | this path is a directory or the file does not exist.")
-			}
+		let linter = Linter(reporter: reporter)
+		try inputs.forEach {
+			print("Linting: \($0.tableName)")
+			let table = try loader.load(url: $0.resourceURL, name: $0.tableName, base: $0.locale)
+			try linter.report(on: table, url: $0.resourceURL)
 		}
 	}
 }

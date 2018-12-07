@@ -20,7 +20,7 @@ struct MissingPlaceholderLintRule: LintRule {
 			try entry.value.forEach {
 				let placeholder = try PlaceholderType.orderedPlaceholders(from: $0.value)
 				if let basePlaceholder = placeholders[$0.key], placeholder != basePlaceholder {
-					let file = URL(fileURLWithPath: "\(entry.key).lproj/\(table.name).strings", relativeTo: url)
+					let file = URL(fileURLWithPath: "\(entry.key.identifier).lproj/\(table.name).strings", relativeTo: url)
 					let line = $0.location?.line
 					let location = LintRuleViolation.Location(file: file, line: line)
 					let reason = "Mismatched placeholders \($0.key)"

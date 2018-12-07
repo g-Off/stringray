@@ -34,12 +34,15 @@ struct CommandRegistry {
 		do {
 			let parsedArguments = try parse()
 			try process(arguments: parsedArguments)
+			exit(EXIT_SUCCESS)
 		}
 		catch let error as ArgumentParserError {
 			print(error.description)
+			exit(EXIT_FAILURE)
 		}
 		catch let error {
 			print(error.localizedDescription)
+			exit(EXIT_FAILURE)
 		}
 	}
 	

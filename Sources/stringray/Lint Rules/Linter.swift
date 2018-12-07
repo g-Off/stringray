@@ -11,22 +11,26 @@ import Yams
 struct Linter {
 	static let fileName = ".stringray.yml"
 	
-	private static let rules: [LintRule] = [
+	static let allRules: [LintRule] = [
 		MissingLocalizationLintRule(),
 		OrphanedLocalizationLintRule(),
 		MissingPlaceholderLintRule()
 	]
 	
+	private enum LintError: Swift.Error {
+		case violations
+	}
+	
 	let rules: [LintRule]
 	let reporter: Reporter
 	
-	init(rules: [LintRule], reporter: Reporter = ConsoleReporter()) {
+	init(rules: [LintRule] = Linter.allRules, reporter: Reporter = ConsoleReporter()) {
 		self.rules = rules
 		self.reporter = reporter
 	}
 	
 	init(excluded: Set<String> = []) {
-		let rules = Linter.rules.filter {
+		let rules = Linter.allRules.filter {
 			!excluded.contains($0.info.identifier)
 		}
 		self.init(rules: rules)
@@ -41,7 +45,7 @@ struct Linter {
 		self.init(excluded: Set(excluded))
 	}
 	
-	func run(on table: StringsTable, url: URL) throws -> [LintRuleViolation] {
+	private func run(on table: StringsTable, url: URL) throws -> [LintRuleViolation] {
 		return try rules.flatMap {
 			try $0.scan(table: table, url: url)
 		}
@@ -51,6 +55,9 @@ struct Linter {
 		let violations = try run(on: table, url: url)
 		var outputStream = LinterOutputStream(fileHandle: FileHandle.standardOutput)
 		reporter.generateReport(for: violations, to: &outputStream)
+		if !violations.isEmpty {
+			throw LintError.violations
+		}
 	}
 }
 

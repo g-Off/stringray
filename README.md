@@ -24,5 +24,8 @@ stringray lint -i /path/to/original.lproj/Table.strings
 stringray lint -l
 ````
 
+## Installing
+If you have Homebrew installed then the tool is available via `brew install g-Off/tools/stringray`
+
 ## Building
 Use `make` to build or `make xcode` to generate the Xcode project.

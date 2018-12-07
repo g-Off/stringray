@@ -18,7 +18,7 @@ struct OrphanedLocalizationLintRule: LintRule {
 		for entry in entries {
 			let orphanedEntries = entry.value.subtracting(baseEntries)
 			for orphanedEntry in orphanedEntries {
-				let file = URL(fileURLWithPath: "\(entry.key).lproj/\(table.name).strings", relativeTo: url)
+				let file = URL(fileURLWithPath: "\(entry.key.identifier).lproj/\(table.name).strings", relativeTo: url)
 				guard let line = orphanedEntry.location?.line else { continue }
 				let location = LintRuleViolation.Location(file: file, line: line)
 				let reason = "Orphaned \(orphanedEntry.key)"
