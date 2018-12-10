@@ -2,6 +2,15 @@
   "object": {
     "pins": [
       {
+        "package": "CommandRegistry",
+        "repositoryURL": "https://github.com/g-Off/CommandRegistry.git",
+        "state": {
+          "branch": "master",
+          "revision": "142aa27445e7998c5201b5ec9682698195d6701a",
+          "version": null
+        }
+      },
+      {
         "package": "SwiftPM",
         "repositoryURL": "https://github.com/apple/swift-package-manager.git",
         "state": {
@@ -17,6 +26,15 @@
           "branch": null,
           "revision": "7b8661865f0d9590a4b7c146237fecd99f3d8406",
           "version": "0.8.2"
+        }
+      },
+      {
+        "package": "XcodeProject",
+        "repositoryURL": "https://github.com/g-Off/XcodeProject.git",
+        "state": {
+          "branch": null,
+          "revision": "a1e12a8659684039258b79761c65abb9ec98fc94",
+          "version": "0.4.0"
         }
       },
       {

@@ -1,5 +1,5 @@
 //
-//  Command.swift
+//  Command+Extensions.swift
 //  stringray
 //
 //  Created by Geoffrey Foster on 2018-11-04.
@@ -7,14 +7,7 @@
 
 import Foundation
 import Utility
-
-protocol Command {
-	var command: String { get }
-	var overview: String { get }
-	
-	init(parser: ArgumentParser)
-	func run(with arguments: ArgumentParser.Result) throws
-}
+import CommandRegistry
 
 extension Command {
 	func write(to url: Foundation.URL, table: StringsTable) throws {

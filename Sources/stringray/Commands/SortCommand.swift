@@ -7,6 +7,7 @@
 
 import Foundation
 import Utility
+import CommandRegistry
 
 struct SortCommand: Command {
 	private struct Arguments {

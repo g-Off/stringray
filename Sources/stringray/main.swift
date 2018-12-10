@@ -8,8 +8,9 @@
 
 import Foundation
 import Utility
+import CommandRegistry
 
-var registry = CommandRegistry(usage: "<command> <options>", overview: "", version: Version(0, 1, 1))
+var registry = Registry(usage: "<command> <options>", overview: "", version: Version(0, 1, 1))
 registry.register(command: MoveCommand.self)
 registry.register(command: CopyCommand.self)
 registry.register(command: SortCommand.self)

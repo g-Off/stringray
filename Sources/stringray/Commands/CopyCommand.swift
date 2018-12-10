@@ -7,6 +7,7 @@
 
 import Foundation
 import Utility
+import CommandRegistry
 
 struct CopyCommand: Command {
 	private struct Arguments {

@@ -10,6 +10,7 @@ import Utility
 import Basic
 import SwiftyTextTable
 import XcodeProject
+import CommandRegistry
 
 struct LintCommand: Command {
 	private struct Arguments {
