@@ -1,5 +1,5 @@
 TOOL_NAME = stringray
-VERSION = 0.1.1
+VERSION = 0.2.0
 
 REPO = https://github.com/g-Off/$(TOOL_NAME)
 RELEASE_TAR = $(REPO)/archive/$(VERSION).tar.gz
@@ -13,7 +13,11 @@ SWIFTC_FLAGS = -Xswiftc "-target" -Xswiftc "x86_64-apple-macosx10.13"
 
 CONFIGURATION = debug
 
+debug: generate_version
 debug: build
+
+generate_version:
+	@sed 's/__VERSION__/$(VERSION)/g' Version.swift.template > Sources/stringray/Version.swift
 
 release:
 	@echo $(SHA)
@@ -30,8 +34,10 @@ install: clean build
 test:
 	swift test $(SWIFTC_FLAGS)
 	
+xcode: generate_version
 xcode:
-	swift package generate-xcodeproj --xcconfig-overrides=Overrides.xcconfig | xed .
+	swift package generate-xcodeproj --xcconfig-overrides=Overrides.xcconfig
+	xed .
 
 clean:
 	swift package clean
