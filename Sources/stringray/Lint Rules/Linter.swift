@@ -9,6 +9,39 @@ import Foundation
 import Yams
 
 struct Linter {
+	struct Config: Decodable {
+		struct Rule: Decodable {
+			let severity: Severity
+		}
+		let included: [String]
+		let excluded: [String]
+		let rules: [String: Rule]
+		
+		private enum CodingKeys: String, CodingKey {
+			case included
+			case excluded
+			case rules
+		}
+		
+		init() {
+			self.included = []
+			self.excluded = []
+			self.rules = [:]
+		}
+		
+		init(url: URL) throws {
+			let string = try String(contentsOf: url, encoding: .utf8)
+			self = try YAMLDecoder().decode(Config.self, from: string, userInfo: [:])
+		}
+		
+		init(from decoder: Decoder) throws {
+			let container = try decoder.container(keyedBy: CodingKeys.self)
+			self.included = try container.decodeIfPresent([String].self, forKey: .included) ?? []
+			self.excluded = try container.decodeIfPresent([String].self, forKey: .excluded) ?? []
+			self.rules = try container.decodeIfPresent([String: Rule].self, forKey: .rules) ?? [:]
+		}
+	}
+	
 	static let fileName = ".stringray.yml"
 	
 	static let allRules: [LintRule] = [
@@ -22,32 +55,32 @@ struct Linter {
 	}
 	
 	let rules: [LintRule]
-	let reporter: Reporter
+	private let reporter: Reporter
+	private let config: Config
 	
-	init(rules: [LintRule] = Linter.allRules, reporter: Reporter = ConsoleReporter()) {
+	init(rules: [LintRule] = Linter.allRules, reporter: Reporter = ConsoleReporter(), config: Config = Config()) {
 		self.rules = rules
 		self.reporter = reporter
-	}
-	
-	init(excluded: Set<String> = []) {
-		let rules = Linter.allRules.filter {
-			!excluded.contains($0.info.identifier)
-		}
-		self.init(rules: rules)
-	}
-	
-	init(path: String = Linter.fileName, rootPath: String? = nil) throws {
-		let rootURL = URL(fileURLWithPath: rootPath ?? FileManager.default.currentDirectoryPath, isDirectory: true)
-		let fullPathURL = URL(fileURLWithPath: path, relativeTo: rootURL)
-		let yamlString = try String(contentsOf: fullPathURL, encoding: .utf8)
-		let dict = try Yams.load(yaml: yamlString) as? [String: Any]
-		let excluded = dict?["excluded"] as? [String] ?? []
-		self.init(excluded: Set(excluded))
+		self.config = config
 	}
 	
 	private func run(on table: StringsTable, url: URL) throws -> [LintRuleViolation] {
-		return try rules.flatMap {
-			try $0.scan(table: table, url: url)
+		var runnableRules = self.rules
+		
+		let includedRules = Set(config.included)
+		if !includedRules.isEmpty {
+			runnableRules.removeAll { (rule) -> Bool in
+				!includedRules.contains(rule.info.identifier)
+			}
+		}
+		
+		let excludedRules = Set(config.excluded)
+		runnableRules.removeAll { (rule) -> Bool in
+			excludedRules.contains(rule.info.identifier)
+		}
+		
+		return try runnableRules.flatMap {
+			try $0.scan(table: table, url: url, config: config.rules[$0.info.identifier])
 		}
 	}
 	

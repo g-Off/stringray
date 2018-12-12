@@ -9,16 +9,17 @@ import Foundation
 
 protocol LintRule {
 	var info: RuleInfo { get }
-	func scan(table: StringsTable, url: URL) throws -> [LintRuleViolation]
+	func scan(table: StringsTable, url: URL, config: Linter.Config.Rule?) throws -> [LintRuleViolation]
 }
 
 struct RuleInfo {
 	let identifier: String
 	let name: String
 	let description: String
+	let severity: Severity
 }
 
-enum Severity: String, CustomStringConvertible {
+enum Severity: String, CustomStringConvertible, Decodable {
 	case warning
 	case error
 	

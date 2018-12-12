@@ -10,7 +10,6 @@ INSTALL_PATH = $(PREFIX)/bin/$(TOOL_NAME)
 BUILD_PATH = $(shell swift build --show-bin-path -c $(CONFIGURATION))/$(TOOL_NAME)
 
 SWIFTC_FLAGS = -Xswiftc "-target" -Xswiftc "x86_64-apple-macosx10.13"
-
 CONFIGURATION = debug
 
 debug: generate_version

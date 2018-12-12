@@ -60,6 +60,14 @@ struct LintCommand: Command {
 			return
 		}
 		
+		let config: Linter.Config
+		if let configFile = commandArgs.configFile ?? localFileSystem.currentWorkingDirectory?.appending(component: Linter.fileName), localFileSystem.exists(configFile) {
+			let url = URL(fileURLWithPath: configFile.asString)
+			config = try Linter.Config(url: url)
+		} else {
+			config = Linter.Config()
+		}
+		
 		let lintInput: [LintInput]
 		var reporter: Reporter = ConsoleReporter()
 		if commandArgs.inputFile.isEmpty {
@@ -75,7 +83,7 @@ struct LintCommand: Command {
 		} else {
 			lintInput = inputs(from: commandArgs.inputFile)
 		}
-		try lint(inputs: lintInput, reporter: reporter)
+		try lint(inputs: lintInput, reporter: reporter, config: config)
 	}
 	
 	private func inputs(from files: [AbsolutePath]) -> [LintInput] {
@@ -127,7 +135,7 @@ struct LintCommand: Command {
 	}
 	
 	private func listRules() {
-		let linter = Linter(excluded: [])
+		let linter = Linter()
 		let rules = linter.rules
 		let columns = [
 			TextTableColumn(header: "id"),
@@ -147,10 +155,10 @@ struct LintCommand: Command {
 		print(table.render())
 	}
 	
-	private func lint(inputs: [LintInput], reporter: Reporter) throws {
+	private func lint(inputs: [LintInput], reporter: Reporter, config: Linter.Config) throws {
 		var loader = StringsTableLoader()
 		loader.options = [.lineNumbers]
-		let linter = Linter(reporter: reporter)
+		let linter = Linter(reporter: reporter, config: config)
 		try inputs.forEach {
 			print("Linting: \($0.tableName)")
 			let table = try loader.load(url: $0.resourceURL, name: $0.tableName, base: $0.locale)

@@ -8,9 +8,9 @@
 import Foundation
 
 struct MissingPlaceholderLintRule: LintRule {
-	let info: RuleInfo = RuleInfo(identifier: "missing_placeholder", name: "Missing Placeholder", description: "")
+	let info: RuleInfo = RuleInfo(identifier: "missing_placeholder", name: "Missing Placeholder", description: "", severity: .error)
 	
-	func scan(table: StringsTable, url: URL) throws -> [LintRuleViolation] {
+	func scan(table: StringsTable, url: URL, config: Linter.Config.Rule?) throws -> [LintRuleViolation] {
 		var violations: [LintRuleViolation] = []
 		var placeholders: [String: [PlaceholderType]] = [:]
 		try table.baseEntries.forEach {
@@ -24,7 +24,7 @@ struct MissingPlaceholderLintRule: LintRule {
 					let line = $0.location?.line
 					let location = LintRuleViolation.Location(file: file, line: line)
 					let reason = "Mismatched placeholders \($0.key)"
-					let violation = LintRuleViolation(locale: entry.key, location: location, severity: .error, reason: reason)
+					let violation = LintRuleViolation(locale: entry.key, location: location, severity: config?.severity ?? info.severity, reason: reason)
 					violations.append(violation)
 				}
 			}
