@@ -49,8 +49,9 @@ struct RenameCommand: Command {
 	}
 	
 	private func rename(url: Foundation.URL, matching: [Match], replacements replacementStrings: [String]) throws {
-		var table = try StringsTableLoader().load(url: url)
+		let loader = StringsTableLoader()
+		var table = try loader.load(url: url)
 		table.replace(matches: matching, replacements: replacementStrings)
-		try write(to: url.resourceDirectory, table: table)
+		try loader.write(to: url.resourceDirectory, table: table)
 	}
 }

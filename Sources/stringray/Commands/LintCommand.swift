@@ -159,10 +159,20 @@ struct LintCommand: Command {
 		var loader = StringsTableLoader()
 		loader.options = [.lineNumbers]
 		let linter = Linter(reporter: reporter, config: config)
+		var allError = Linter.Error([])
+		
 		try inputs.forEach {
 			print("Linting: \($0.tableName)")
 			let table = try loader.load(url: $0.resourceURL, name: $0.tableName, base: $0.locale)
-			try linter.report(on: table, url: $0.resourceURL)
+			do {
+				try linter.report(on: table, url: $0.resourceURL)
+				try loader.writeCache(table: table, baseURL: $0.resourceURL)
+			} catch let error as Linter.Error {
+				allError.violations.append(contentsOf: error.violations)
+			}
+		}
+		if !allError.violations.isEmpty {
+			throw allError
 		}
 	}
 }

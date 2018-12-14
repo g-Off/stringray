@@ -55,7 +55,7 @@ struct MoveCommand: Command {
 		let filteredTable = fromTable.withKeys(matching: matching)
 		toTable.addEntries(from: filteredTable)
 		fromTable.removeEntries(from: filteredTable)
-		try write(to: to.resourceDirectory, table: toTable)
-		try write(to: from.resourceDirectory, table: fromTable)
+		try loader.write(to: to.resourceDirectory, table: toTable)
+		try loader.write(to: from.resourceDirectory, table: fromTable)
 	}
 }

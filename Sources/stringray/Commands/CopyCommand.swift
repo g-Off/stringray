@@ -54,6 +54,6 @@ struct CopyCommand: Command {
 		
 		let filteredTable = fromTable.withKeys(matching: matching)
 		toTable.addEntries(from: filteredTable)
-		try write(to: to.resourceDirectory, table: toTable)
+		try loader.write(to: to.resourceDirectory, table: toTable)
 	}
 }

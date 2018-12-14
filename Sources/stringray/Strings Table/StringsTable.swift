@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct StringsTable: Codable {	
+struct StringsTable: Codable {
 	typealias EntriesType = [Locale: OrderedSet<Entry>]
 	typealias DictEntriesType = [Locale: [String: DictEntry]]
 	

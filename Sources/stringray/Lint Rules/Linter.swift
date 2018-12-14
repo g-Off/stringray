@@ -50,8 +50,17 @@ struct Linter {
 		MissingPlaceholderLintRule()
 	]
 	
-	private enum LintError: Swift.Error {
-		case violations
+	struct Error: LocalizedError {
+		var violations: [LintRuleViolation]
+		init(_ violations: [LintRuleViolation]) {
+			self.violations = violations
+		}
+		
+		var errorDescription: String? {
+			let errorCount = violations.filter { $0.severity == .error }.count
+			let warningCount = violations.filter { $0.severity == .warning }.count
+			return "Encountered \(errorCount) errors and \(warningCount) warnings."
+		}
 	}
 	
 	let rules: [LintRule]
@@ -89,7 +98,7 @@ struct Linter {
 		var outputStream = LinterOutputStream(fileHandle: FileHandle.standardOutput)
 		reporter.generateReport(for: violations, to: &outputStream)
 		if !violations.isEmpty {
-			throw LintError.violations
+			throw Linter.Error(violations)
 		}
 	}
 }
