@@ -7,11 +7,11 @@
 
 import Foundation
 
-enum Match {
+public enum Match {
 	case prefix(String)
 	case regex(NSRegularExpression)
 	
-	func matches(key: String) -> Bool {
+	public func matches(key: String) -> Bool {
 		switch self {
 		case .prefix(let prefix):
 			return key.hasPrefix(prefix)
@@ -20,7 +20,7 @@ enum Match {
 		}
 	}
 	
-	func replacing(with newPrefix: String, in string: String) -> String? {
+	public func replacing(with newPrefix: String, in string: String) -> String? {
 		switch self {
 		case .prefix(let prefix):
 			guard let range = string.range(of: prefix) else { return nil }

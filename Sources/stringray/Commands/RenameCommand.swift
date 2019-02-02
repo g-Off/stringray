@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import Utility
+import RayGun
 import CommandRegistry
 
 struct RenameCommand: Command {

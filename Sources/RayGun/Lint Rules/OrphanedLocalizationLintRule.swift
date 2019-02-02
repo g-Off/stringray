@@ -10,7 +10,7 @@ import Foundation
 struct OrphanedLocalizationLintRule: LintRule {
 	let info: RuleInfo = RuleInfo(identifier: "orphaned_localization", name: "Orphaned Localization", description: "", severity: .warning)
 	
-	func scan(table: StringsTable, url: URL, config: Linter.Config.Rule?) throws -> [LintRuleViolation] {
+	func scan(table: StringsTable, url: Foundation.URL, config: Linter.Config.Rule?) throws -> [LintRuleViolation] {
 		var violations: [LintRuleViolation] = []
 		var entries = table.entries
 		entries.removeValue(forKey: table.base)
@@ -18,7 +18,7 @@ struct OrphanedLocalizationLintRule: LintRule {
 		for entry in entries {
 			let orphanedEntries = entry.value.subtracting(baseEntries)
 			for orphanedEntry in orphanedEntries {
-				let file = URL(fileURLWithPath: "\(entry.key.identifier).lproj/\(table.name).strings", relativeTo: url)
+				let file = Foundation.URL(fileURLWithPath: "\(entry.key.identifier).lproj/\(table.name).strings", relativeTo: url)
 				guard let line = orphanedEntry.location?.line else { continue }
 				let location = LintRuleViolation.Location(file: file, line: line)
 				let reason = "Orphaned \(orphanedEntry.key)"

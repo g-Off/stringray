@@ -7,8 +7,8 @@
 
 import Foundation
 
-extension URL {
-	var tableName: String? {
+extension Foundation.URL {
+	public var tableName: String? {
 		var url = self
 		if ["strings", "stringsdict"].contains(url.pathExtension) {
 			url.deletePathExtension()
@@ -17,7 +17,7 @@ extension URL {
 		return nil
 	}
 	
-	var locale: Locale? {
+	public var locale: Locale? {
 		var url = self
 		if ["strings", "stringsdict"].contains(url.pathExtension) {
 			url.deleteLastPathComponent()
@@ -29,7 +29,7 @@ extension URL {
 		return nil
 	}
 	
-	var resourceDirectory: URL {
+	public var resourceDirectory: Foundation.URL {
 		var dir = self
 		if dir.pathExtension == "strings" || dir.pathExtension == "stringsdict" {
 			dir.deleteLastPathComponent()
@@ -40,22 +40,22 @@ extension URL {
 		return dir
 	}
 	
-	var lprojURLs: [URL] {
+	var lprojURLs: [Foundation.URL] {
 		let directories = try? FileManager.default.contentsOfDirectory(at: self, includingPropertiesForKeys: nil, options: []).filter { (url) -> Bool in
 			return url.pathExtension == "lproj"
 		}
 		return directories ?? []
 	}
 	
-	func stringsFiles(tableName: String) -> [URL] {
+	func stringsFiles(tableName: String) -> [Foundation.URL] {
 		return files(tableName: tableName, ext: "strings")
 	}
 	
-	func stringsDictFiles(tableName: String) -> [URL] {
+	func stringsDictFiles(tableName: String) -> [Foundation.URL] {
 		return files(tableName: tableName, ext: "stringsdict")
 	}
 	
-	private func files(tableName: String, ext: String) -> [URL] {
+	private func files(tableName: String, ext: String) -> [Foundation.URL] {
 		return lprojURLs.compactMap { (lprojURL) in
 			let url = lprojURL.appendingPathComponent(tableName).appendingPathExtension(ext)
 			guard let reachable = try? url.checkResourceIsReachable(), reachable == true else { return nil }
@@ -63,15 +63,15 @@ extension URL {
 		}
 	}
 	
-	func stringsURL(tableName: String, locale: Locale) throws -> URL {
+	func stringsURL(tableName: String, locale: Locale) throws -> Foundation.URL {
 		return try fileURL(tableName: tableName, locale: locale, ext: "strings", create: true)
 	}
 	
-	func stringsDictURL(tableName: String, locale: Locale) throws -> URL {
+	func stringsDictURL(tableName: String, locale: Locale) throws -> Foundation.URL {
 		return try fileURL(tableName: tableName, locale: locale, ext: "stringsdict", create: true)
 	}
 	
-	private func fileURL(tableName: String, locale: Locale, ext: String, create: Bool) throws -> URL {
+	private func fileURL(tableName: String, locale: Locale, ext: String, create: Bool) throws -> Foundation.URL {
 		let lprojURL = appendingPathComponent("\(locale.identifier).lproj", isDirectory: true)
 		if create {
 			try FileManager.default.createDirectory(at: lprojURL, withIntermediateDirectories: true, attributes: nil)

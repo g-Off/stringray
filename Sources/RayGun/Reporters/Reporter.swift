@@ -7,6 +7,6 @@
 
 import Foundation
 
-protocol Reporter {
+public protocol Reporter {
 	func generateReport<Target: TextOutputStream>(for violations: [LintRuleViolation], to outputStream: inout Target)
 }

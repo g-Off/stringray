@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import RayGun
 import SwiftyTextTable
 
 struct ConsoleReporter: Reporter {
@@ -15,11 +16,11 @@ struct ConsoleReporter: Reporter {
 }
 
 extension LintRuleViolation: TextTableRepresentable {
-	static var columnHeaders: [String] {
+	public static var columnHeaders: [String] {
 		return ["Locale", "Location", "Severity", "Reason"]
 	}
 	
-	var tableValues: [CustomStringConvertible] {
+	public var tableValues: [CustomStringConvertible] {
 		return [locale.identifier, location, severity, reason]
 	}
 }
