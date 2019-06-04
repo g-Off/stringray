@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import Yams
 
 public struct Linter {
 	public struct Config: Decodable {
@@ -29,11 +28,6 @@ public struct Linter {
 			self.rules = [:]
 		}
 		
-		public init(url: Foundation.URL) throws {
-			let string = try String(contentsOf: url, encoding: .utf8)
-			self = try YAMLDecoder().decode(Config.self, from: string, userInfo: [:])
-		}
-		
 		public init(from decoder: Decoder) throws {
 			let container = try decoder.container(keyedBy: CodingKeys.self)
 			self.included = try container.decodeIfPresent([String].self, forKey: .included) ?? []
@@ -47,7 +41,8 @@ public struct Linter {
 	public static let allRules: [LintRule] = [
 		MissingLocalizationLintRule(),
 		OrphanedLocalizationLintRule(),
-		MissingPlaceholderLintRule()
+		MissingPlaceholderLintRule(),
+		MissingCommentLintRule()
 	]
 	
 	public struct Error: LocalizedError {

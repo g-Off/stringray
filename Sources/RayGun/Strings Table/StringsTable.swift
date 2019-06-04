@@ -45,7 +45,7 @@ public struct StringsTable: Codable {
 		return dictEntries[base] ?? [:]
 	}
 	
-	public init(name: String, base: Locale, entries: EntriesType, dictEntries: DictEntriesType) {
+	public init(name: String, base: Locale, entries: EntriesType = [:], dictEntries: DictEntriesType = [:]) {
 		self.name = name
 		self.base = base
 		self.entries = entries
@@ -125,7 +125,7 @@ public struct StringsTable: Codable {
 	}
 	
 	private mutating func replace(entry: Entry, with otherEntry: Entry, locale: Locale) {
-		guard let index = entries[locale]?.index(of: entry) else { return }
+		guard let index = entries[locale]?.firstIndex(of: entry) else { return }
 		entries[locale]?[index] = otherEntry
 	}
 	

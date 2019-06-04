@@ -6,8 +6,12 @@
 //
 
 import Foundation
-import RayGun
 import CommandRegistry
+import Basic
+import Utility
+import RayGun
+import XcodeProject
+import SwiftyTextTable
 
 struct LintCommand: Command {
 	private struct Arguments {

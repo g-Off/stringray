@@ -7,6 +7,8 @@
 
 import Foundation
 import CommandRegistry
+import Basic
+import Utility
 import RayGun
 
 struct MoveCommand: Command {
