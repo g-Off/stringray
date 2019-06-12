@@ -6,8 +6,10 @@
 //
 
 import Foundation
-import Utility
 import CommandRegistry
+import Basic
+import Utility
+import RayGun
 
 struct MoveCommand: Command {
 	private struct Arguments {

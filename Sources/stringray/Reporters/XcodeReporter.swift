@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import RayGun
 
 struct XcodeReporter: Reporter {
 	func generateReport<Target: TextOutputStream>(for violations: [LintRuleViolation], to outputStream: inout Target) {

@@ -8,7 +8,7 @@
 import Foundation
 
 extension StringsTable {
-	struct DictEntry: Codable, Hashable {
+	public struct DictEntry: Codable, Hashable {
 		private struct _DictKey: CodingKey, Equatable {
 			var stringValue: String
 			var intValue: Int?
@@ -28,6 +28,7 @@ extension StringsTable {
 				return _DictKey(stringValue: key)!
 			}
 		}
+		
 		struct PluralizationRule: Codable, Hashable {
 			private enum CodingKeys: String, CodingKey {
 				case zero, one, two, few, many, other
@@ -73,7 +74,7 @@ extension StringsTable {
 		let formatKey: String
 		let pluralizations: [String: PluralizationRule]
 		
-		init(from decoder: Decoder) throws {
+		public init(from decoder: Decoder) throws {
 			let container = try decoder.container(keyedBy: _DictKey.self)
 			self.formatKey = try container.decode(String.self, forKey: _DictKey.localizedFormatKey)
 			let allKeys = container.allKeys.filter {
@@ -86,7 +87,7 @@ extension StringsTable {
 			self.pluralizations = Dictionary(elements, uniquingKeysWith: { (lhs, _) in return lhs })
 		}
 		
-		func encode(to encoder: Encoder) throws {
+		public func encode(to encoder: Encoder) throws {
 			var container = encoder.container(keyedBy: _DictKey.self)
 			try container.encode(formatKey, forKey: _DictKey.localizedFormatKey)
 			try pluralizations.forEach {

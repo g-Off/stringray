@@ -1,5 +1,5 @@
 import Utility
 
 extension Version {
-	static var current: Version = "0.3.0"
+	static var current: Version = "0.3.1"
 }

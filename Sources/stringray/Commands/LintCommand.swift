@@ -6,11 +6,12 @@
 //
 
 import Foundation
-import Utility
-import Basic
-import SwiftyTextTable
-import XcodeProject
 import CommandRegistry
+import Basic
+import Utility
+import RayGun
+import XcodeProject
+import SwiftyTextTable
 
 struct LintCommand: Command {
 	private struct Arguments {
@@ -135,7 +136,7 @@ struct LintCommand: Command {
 	}
 	
 	private func listRules() {
-		let linter = Linter()
+		let linter = Linter(reporter: ConsoleReporter())
 		let rules = linter.rules
 		let columns = [
 			TextTableColumn(header: "id"),
@@ -159,7 +160,7 @@ struct LintCommand: Command {
 		var loader = StringsTableLoader()
 		loader.options = [.lineNumbers]
 		let linter = Linter(reporter: reporter, config: config)
-		var allError = Linter.Error([])
+		var violations: [LintRuleViolation] = []
 		
 		try inputs.forEach {
 			print("Linting: \($0.tableName)")
@@ -168,11 +169,11 @@ struct LintCommand: Command {
 				try linter.report(on: table, url: $0.resourceURL)
 				try loader.writeCache(table: table, baseURL: $0.resourceURL)
 			} catch let error as Linter.Error {
-				allError.violations.append(contentsOf: error.violations)
+				violations.append(contentsOf: error.violations)
 			}
 		}
-		if !allError.violations.isEmpty {
-			throw allError
+		if !violations.isEmpty {
+			throw Linter.Error(violations)
 		}
 	}
 }

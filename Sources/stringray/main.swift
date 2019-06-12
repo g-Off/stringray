@@ -9,6 +9,15 @@
 import Foundation
 import Utility
 import CommandRegistry
+import Yams
+import RayGun
+
+extension Linter.Config {
+	public init(url: Foundation.URL) throws {
+		let string = try String(contentsOf: url, encoding: .utf8)
+		self = try YAMLDecoder().decode(Linter.Config.self, from: string, userInfo: [:])
+	}
+}
 
 var registry = Registry(usage: "<command> <options>", overview: "", version: Version.current)
 registry.register(command: MoveCommand.self)

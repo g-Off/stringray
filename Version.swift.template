@@ -1,5 +1,0 @@
-import Utility
-
-extension Version {
-	static var current: Version = "__VERSION__"
-}

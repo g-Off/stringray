@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct StringsTableLoader {
+public struct StringsTableLoader {
 	private enum Error: String, Swift.Error, LocalizedError {
 		case invalidURL
 		
@@ -19,7 +19,7 @@ struct StringsTableLoader {
 		}
 	}
 	
-	struct Options: OptionSet {
+	public struct Options: OptionSet {
 		public private(set) var rawValue: UInt
 		public init(rawValue: UInt) { self.rawValue = rawValue }
 		
@@ -27,9 +27,13 @@ struct StringsTableLoader {
 		public static let ignoreCached = Options(rawValue: 1 << 1)
 	}
 	
-	var options: Options = []
+	public var options: Options = []
 	
-	func load(url: URL) throws -> StringsTable {
+	public init() {
+		
+	}
+	
+	public func load(url: Foundation.URL) throws -> StringsTable {
 		let resourceDirectory = url.resourceDirectory
 		guard let name = url.tableName, let base = url.locale else {
 			throw Error.invalidURL
@@ -37,7 +41,7 @@ struct StringsTableLoader {
 		return try self.load(url: resourceDirectory, name: name, base: base)
 	}
 	
-	func load(url: URL, name: String, base: Locale) throws -> StringsTable {
+	public func load(url: Foundation.URL, name: String, base: Locale) throws -> StringsTable {
 		var entries: StringsTable.EntriesType = [:]
 		var dictEntries: StringsTable.DictEntriesType = [:]
 		
@@ -68,7 +72,7 @@ struct StringsTableLoader {
 		return StringsTable(name: name, base: base, entries: entries, dictEntries: dictEntries)
 	}
 	
-	func write(to url: Foundation.URL, table: StringsTable) throws {
+	public func write(to url: Foundation.URL, table: StringsTable) throws {
 		for (languageId, languageEntries) in table.entries where !languageEntries.isEmpty {
 			let fileURL = try url.stringsURL(tableName: table.name, locale: languageId)
 			guard let outputStream = OutputStream(url: fileURL, append: false) else { continue }
@@ -93,7 +97,7 @@ struct StringsTableLoader {
 		}
 	}
 	
-	func writeCache(table: StringsTable, baseURL: URL) throws {
+	public func writeCache(table: StringsTable, baseURL: Foundation.URL) throws {
 		var cacheKeys: [String: Date] = [:]
 		
 		for (languageId, languageEntries) in table.entries where !languageEntries.isEmpty {
@@ -130,7 +134,7 @@ struct StringsTableLoader {
 		return URL(fileURLWithPath: filePath, relativeTo: cacheURL)
 	}
 	
-	private func load(from url: URL, options: Options) throws -> OrderedSet<StringsTable.Entry> {
+	private func load(from url: Foundation.URL, options: Options) throws -> OrderedSet<StringsTable.Entry> {
 		func lineNumber(scanLocation: Int, newlineLocations: [Int]) -> Int {
 			var lastIndex = 0
 			for (index, newlineLocation) in newlineLocations.enumerated() {
@@ -190,7 +194,7 @@ struct StringsTableLoader {
 		return OrderedSet(entries)
 	}
 	
-	private func load(from url: URL) throws -> [String: StringsTable.DictEntry] {
+	private func load(from url: Foundation.URL) throws -> [String: StringsTable.DictEntry] {
 		let data = try Data(contentsOf: url)
 		let decoder = PropertyListDecoder()
 		return try decoder.decode([String: StringsTable.DictEntry].self, from: data)

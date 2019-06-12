@@ -8,9 +8,9 @@
 
 import Foundation
 
-struct StringsTable: Codable {
-	typealias EntriesType = [Locale: OrderedSet<Entry>]
-	typealias DictEntriesType = [Locale: [String: DictEntry]]
+public struct StringsTable: Codable {
+	public typealias EntriesType = [Locale: OrderedSet<Entry>]
+	public typealias DictEntriesType = [Locale: [String: DictEntry]]
 	
 	private enum CodingKeys: String, CodingKey {
 		case name
@@ -19,10 +19,10 @@ struct StringsTable: Codable {
 		case dictEntries
 	}
 	
-	let name: String
-	let base: Locale
-	private(set) var entries: EntriesType = [:]
-	private(set) var dictEntries: DictEntriesType = [:]
+	public let name: String
+	public let base: Locale
+	public private(set) var entries: EntriesType = [:]
+	public private(set) var dictEntries: DictEntriesType = [:]
 	
 	private var allLanguageKeys: Set<Locale> {
 		var keys: Set<Locale> = []
@@ -31,21 +31,21 @@ struct StringsTable: Codable {
 		return keys
 	}
 	
-	var baseEntries: OrderedSet<Entry> {
+	public var baseEntries: OrderedSet<Entry> {
 		return entries[base] ?? []
 	}
 	
-	var localizedEntries: EntriesType {
+	public var localizedEntries: EntriesType {
 		var localizedEntries = entries
 		localizedEntries.removeValue(forKey: base)
 		return localizedEntries
 	}
 	
-	var baseDictEntries: [String: DictEntry] {
+	public var baseDictEntries: [String: DictEntry] {
 		return dictEntries[base] ?? [:]
 	}
 	
-	init(name: String, base: Locale, entries: EntriesType, dictEntries: DictEntriesType) {
+	public init(name: String, base: Locale, entries: EntriesType = [:], dictEntries: DictEntriesType = [:]) {
 		self.name = name
 		self.base = base
 		self.entries = entries
@@ -59,7 +59,7 @@ struct StringsTable: Codable {
 		return OrderedSet(matchingEntries)
 	}
 	
-	func withKeys(matching: [Match]) -> StringsTable {
+	public func withKeys(matching: [Match]) -> StringsTable {
 		var filteredEntries: EntriesType = [:]
 		var filteredDictEntries: DictEntriesType = [:]
 		
@@ -81,7 +81,7 @@ struct StringsTable: Codable {
 		return table
 	}
 	
-	mutating func addEntries(from table: StringsTable) {
+	public mutating func addEntries(from table: StringsTable) {
 		for (languageId, languageEntries) in table.entries {
 			entries[languageId, default: []].formUnion(languageEntries)
 		}
@@ -93,7 +93,7 @@ struct StringsTable: Codable {
 		}
 	}
 	
-	mutating func removeEntries(from table: StringsTable) {
+	public mutating func removeEntries(from table: StringsTable) {
 		for (languageId, languageEntries) in table.entries {
 			entries[languageId]?.subtract(languageEntries)
 		}
@@ -105,7 +105,7 @@ struct StringsTable: Codable {
 		}
 	}
 	
-	mutating func sort() {
+	public mutating func sort() {
 		for (languageId, languageEntries) in entries {
 			var sortedLanguageEntries = languageEntries
 			sortedLanguageEntries.sort { (lhs, rhs) -> Bool in
@@ -115,7 +115,7 @@ struct StringsTable: Codable {
 		}
 	}
 	
-	mutating func remove(keys: Set<String>) {
+	public mutating func remove(keys: Set<String>) {
 		for (locale, entry) in entries {
 			let filtered = entry.filter {
 				return !keys.contains($0.key)
@@ -125,7 +125,7 @@ struct StringsTable: Codable {
 	}
 	
 	private mutating func replace(entry: Entry, with otherEntry: Entry, locale: Locale) {
-		guard let index = entries[locale]?.index(of: entry) else { return }
+		guard let index = entries[locale]?.firstIndex(of: entry) else { return }
 		entries[locale]?[index] = otherEntry
 	}
 	
@@ -134,7 +134,7 @@ struct StringsTable: Codable {
 		dictEntries[locale]?[otherKey] = entry
 	}
 	
-	mutating func replace(matches: [Match], replacements replacementStrings: [String]) {
+	public mutating func replace(matches: [Match], replacements replacementStrings: [String]) {
 		for (match, replacement) in zip(matches, replacementStrings) {
 			for localizedEntries in entriesMatching(match) {
 				localizedEntries.value.forEach {

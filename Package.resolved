@@ -24,8 +24,8 @@
         "repositoryURL": "https://github.com/scottrhoyt/SwiftyTextTable.git",
         "state": {
           "branch": null,
-          "revision": "7b8661865f0d9590a4b7c146237fecd99f3d8406",
-          "version": "0.8.2"
+          "revision": "c6df6cf533d120716bff38f8ff9885e1ce2a4ac3",
+          "version": "0.9.0"
         }
       },
       {
@@ -33,8 +33,8 @@
         "repositoryURL": "https://github.com/g-Off/XcodeProject.git",
         "state": {
           "branch": null,
-          "revision": "a1e12a8659684039258b79761c65abb9ec98fc94",
-          "version": "0.4.0"
+          "revision": "f5095a860de4cd1f0e635957bed7c4b80392dac8",
+          "version": "0.5.0"
         }
       },
       {
@@ -42,8 +42,8 @@
         "repositoryURL": "https://github.com/jpsim/Yams.git",
         "state": {
           "branch": null,
-          "revision": "26ab35f50ea891e8edefcc9d975db2f6b67e1d68",
-          "version": "1.0.1"
+          "revision": "b08dba4bcea978bf1ad37703a384097d3efce5af",
+          "version": "1.0.2"
         }
       }
     ]

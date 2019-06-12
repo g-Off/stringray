@@ -6,11 +6,10 @@
 //
 
 import Foundation
-import Yams
 
-struct Linter {
-	struct Config: Decodable {
-		struct Rule: Decodable {
+public struct Linter {
+	public struct Config: Decodable {
+		public struct Rule: Decodable {
 			let severity: Severity
 		}
 		let included: [String]
@@ -23,18 +22,13 @@ struct Linter {
 			case rules
 		}
 		
-		init() {
+		public init() {
 			self.included = []
 			self.excluded = []
 			self.rules = [:]
 		}
 		
-		init(url: URL) throws {
-			let string = try String(contentsOf: url, encoding: .utf8)
-			self = try YAMLDecoder().decode(Config.self, from: string, userInfo: [:])
-		}
-		
-		init(from decoder: Decoder) throws {
+		public init(from decoder: Decoder) throws {
 			let container = try decoder.container(keyedBy: CodingKeys.self)
 			self.included = try container.decodeIfPresent([String].self, forKey: .included) ?? []
 			self.excluded = try container.decodeIfPresent([String].self, forKey: .excluded) ?? []
@@ -42,38 +36,40 @@ struct Linter {
 		}
 	}
 	
-	static let fileName = ".stringray.yml"
+	public static let fileName = ".stringray.yml"
 	
-	static let allRules: [LintRule] = [
+	public static let allRules: [LintRule] = [
 		MissingLocalizationLintRule(),
 		OrphanedLocalizationLintRule(),
-		MissingPlaceholderLintRule()
+		MissingPlaceholderLintRule(),
+		MissingCommentLintRule()
 	]
 	
-	struct Error: LocalizedError {
-		var violations: [LintRuleViolation]
-		init(_ violations: [LintRuleViolation]) {
+	public struct Error: LocalizedError {
+		public private(set) var violations: [LintRuleViolation]
+		
+		public init(_ violations: [LintRuleViolation]) {
 			self.violations = violations
 		}
 		
-		var errorDescription: String? {
+		public var errorDescription: String? {
 			let errorCount = violations.filter { $0.severity == .error }.count
 			let warningCount = violations.filter { $0.severity == .warning }.count
 			return "Encountered \(errorCount) errors and \(warningCount) warnings."
 		}
 	}
 	
-	let rules: [LintRule]
+	public let rules: [LintRule]
 	private let reporter: Reporter
 	private let config: Config
 	
-	init(rules: [LintRule] = Linter.allRules, reporter: Reporter = ConsoleReporter(), config: Config = Config()) {
+	public init(rules: [LintRule] = Linter.allRules, reporter: Reporter, config: Config = Config()) {
 		self.rules = rules
 		self.reporter = reporter
 		self.config = config
 	}
 	
-	private func run(on table: StringsTable, url: URL) throws -> [LintRuleViolation] {
+	private func run(on table: StringsTable, url: Foundation.URL) throws -> [LintRuleViolation] {
 		var runnableRules = self.rules
 		
 		let includedRules = Set(config.included)
@@ -93,7 +89,7 @@ struct Linter {
 		}
 	}
 	
-	func report(on table: StringsTable, url: URL) throws {
+	public func report(on table: StringsTable, url: Foundation.URL) throws {
 		let violations = try run(on: table, url: url)
 		var outputStream = LinterOutputStream(fileHandle: FileHandle.standardOutput)
 		reporter.generateReport(for: violations, to: &outputStream)

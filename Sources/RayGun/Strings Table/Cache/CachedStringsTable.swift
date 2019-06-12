@@ -29,9 +29,9 @@ struct CachedStringsTable: Codable {
 		return stringsTable.dictEntries[locale]
 	}
 	
-	func isCacheValid(for locale: Locale, type: LocalizationType, base: URL) -> Bool {
+	func isCacheValid(for locale: Locale, type: LocalizationType, base: Foundation.URL) -> Bool {
 		do {
-			let fileURL: URL
+			let fileURL: Foundation.URL
 			switch type {
 			case .strings:
 				fileURL = try base.stringsURL(tableName: stringsTable.name, locale: locale)

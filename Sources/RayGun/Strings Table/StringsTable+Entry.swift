@@ -8,8 +8,8 @@
 import Foundation
 
 extension StringsTable {
-	struct Entry: Codable, Hashable, CustomStringConvertible {
-		struct Location: Codable {
+	public struct Entry: Codable, Hashable, CustomStringConvertible {
+		public struct Location: Codable {
 			var comment: Int? = nil
 			var line: Int = NSNotFound
 		}
@@ -19,7 +19,7 @@ extension StringsTable {
 		var key: String = ""
 		var value: String = ""
 		
-		var description: String {
+		public var description: String {
 			var string = ""
 			if let comment = comment {
 				string.append("/* \(comment) */\n")
