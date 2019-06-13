@@ -25,12 +25,13 @@ public struct StringsTableLoader {
 		
 		public static let lineNumbers = Options(rawValue: 1 << 0)
 		public static let ignoreCached = Options(rawValue: 1 << 1)
+		public static let singleLocale = Options(rawValue: 1 << 2)
 	}
 	
-	public var options: Options = []
+	public let options: Options
 	
-	public init() {
-		
+	public init(options: Options = []) {
+		self.options = options
 	}
 	
 	public func load(url: Foundation.URL) throws -> StringsTable {
@@ -51,7 +52,14 @@ public struct StringsTableLoader {
 			cached = try? decoder.decode(CachedStringsTable.self, from: data)
 		}
 		
-		try url.lprojURLs.forEach {
+		let lprojURLs: [URL]
+		if options.contains(.singleLocale) {
+			lprojURLs = [URL(fileURLWithPath: "\(base.identifier).lproj", isDirectory: false, relativeTo: url)]
+		} else {
+			lprojURLs = url.lprojURLs
+		}
+		
+		try lprojURLs.forEach {
 			guard let locale = $0.locale else { return }
 			
 			let stringsTableURL = $0.appendingPathComponent(name).appendingPathExtension("strings")

@@ -157,8 +157,7 @@ struct LintCommand: Command {
 	}
 	
 	private func lint(inputs: [LintInput], reporter: Reporter, config: Linter.Config) throws {
-		var loader = StringsTableLoader()
-		loader.options = [.lineNumbers]
+		let loader = StringsTableLoader(options: [.lineNumbers])
 		let linter = Linter(reporter: reporter, config: config)
 		var violations: [LintRuleViolation] = []
 		
