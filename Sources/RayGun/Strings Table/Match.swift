@@ -9,12 +9,15 @@ import Foundation
 
 public enum Match {
 	case prefix(String)
+	case exact(String)
 	case regex(NSRegularExpression)
 	
 	public func matches(key: String) -> Bool {
 		switch self {
 		case .prefix(let prefix):
 			return key.hasPrefix(prefix)
+		case .exact(let exact):
+			return key == exact
 		case .regex(_): // TODO: support this eventually
 			return false
 		}

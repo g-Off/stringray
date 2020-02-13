@@ -6,12 +6,12 @@
 //
 
 import Foundation
-import RayGun
+import SillyString
 import SwiftyTextTable
 
 struct ConsoleReporter: Reporter {
-	func generateReport<Target: TextOutputStream>(for violations: [LintRuleViolation], to outputStream: inout Target) {
-		outputStream.write(violations.renderTextTable())
+	func generateReport<Target: TextOutputStream>(for rule: RuleInfo, violations: [LintRuleViolation], to outputStream: inout Target) {
+		outputStream.write(TextTable(objects: violations, header: rule.name).render())
 	}
 }
 
@@ -21,6 +21,6 @@ extension LintRuleViolation: TextTableRepresentable {
 	}
 	
 	public var tableValues: [CustomStringConvertible] {
-		return [locale.identifier, location, severity, reason]
+		return [locale, location ?? "<unknown>", severity, reason]
 	}
 }

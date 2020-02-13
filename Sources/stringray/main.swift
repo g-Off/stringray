@@ -7,22 +7,23 @@
 //
 
 import Foundation
-import Utility
-import CommandRegistry
-import Yams
-import RayGun
+import SillyString
 
-extension Linter.Config {
-	public init(url: Foundation.URL) throws {
-		let string = try String(contentsOf: url, encoding: .utf8)
-		self = try YAMLDecoder().decode(Linter.Config.self, from: string, userInfo: [:])
-	}
-}
+let running = false
 
-var registry = Registry(usage: "<command> <options>", overview: "", version: Version.current)
-registry.register(command: MoveCommand.self)
-registry.register(command: CopyCommand.self)
-registry.register(command: SortCommand.self)
-registry.register(command: RenameCommand.self)
-registry.register(command: LintCommand.self)
-registry.run()
+#if testing
+Stringray.main()
+#else
+//FileManager.default.changeCurrentDirectoryPath(...)
+
+var additionalArgs: [String] = []
+
+//additionalArgs = ["sort", "--help"]
+//additionalArgs = ["copy", "--help"]
+//additionalArgs = ["lint", "--help"]
+additionalArgs = ["version"]
+
+var args = CommandLine.arguments.dropFirst()
+Stringray.main(args + additionalArgs)
+
+#endif
